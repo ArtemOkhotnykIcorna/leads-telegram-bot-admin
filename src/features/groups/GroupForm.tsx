@@ -7,12 +7,18 @@ import {
   useCreateGroup,
   useUpdateGroup,
 } from "@/hooks/queries/useGroups";
-import { Button, Input, Textarea, Switch } from "@/components/ui";
+import { useActiveDirections } from "@/hooks/queries/useDirections";
+import { Button, Input, Switch, Select } from "@/components/ui";
 
 const groupSchema = z.object({
   name: z.string().min(1, "Обязательное поле"),
-  telegramChatId: z.string().min(1, "Обязательное поле"),
-  description: z.string().optional(),
+  chatId: z.string().optional(),
+  directionId: z.string().min(1, "Выберите направление"),
+  inviteLink: z
+    .string()
+    .url("Введите корректную ссылку")
+    .optional()
+    .or(z.literal("")),
   isActive: z.boolean().default(true),
 });
 
@@ -26,6 +32,7 @@ interface GroupFormProps {
 export function GroupForm({ groupId, onSuccess }: GroupFormProps) {
   const isEditing = !!groupId;
   const { data: group } = useGroup(groupId || "");
+  const { data: directions } = useActiveDirections();
   const createMutation = useCreateGroup();
   const updateMutation = useUpdateGroup();
 
@@ -40,8 +47,9 @@ export function GroupForm({ groupId, onSuccess }: GroupFormProps) {
     resolver: zodResolver(groupSchema),
     defaultValues: {
       name: "",
-      telegramChatId: "",
-      description: "",
+      chatId: "",
+      directionId: "",
+      inviteLink: "",
       isActive: true,
     },
   });
@@ -50,18 +58,25 @@ export function GroupForm({ groupId, onSuccess }: GroupFormProps) {
     if (group && isEditing) {
       reset({
         name: group.name,
-        telegramChatId: group.telegramChatId,
-        description: group.description || "",
+        chatId: group.chatId || "",
+        directionId: group.directionId?._id || "",
+        inviteLink: group.inviteLink || "",
         isActive: group.isActive,
       });
     }
   }, [group, isEditing, reset]);
 
   const onSubmit = async (data: GroupFormData) => {
+    const dto = {
+      ...data,
+      inviteLink: data.inviteLink || undefined,
+      chatId: data.chatId || undefined,
+    };
+
     if (isEditing) {
-      await updateMutation.mutateAsync({ id: groupId!, dto: data });
+      await updateMutation.mutateAsync({ id: groupId!, dto });
     } else {
-      await createMutation.mutateAsync(data);
+      await createMutation.mutateAsync(dto);
     }
     onSuccess();
   };
@@ -76,15 +91,35 @@ export function GroupForm({ groupId, onSuccess }: GroupFormProps) {
         {...register("name")}
       />
 
+      <Select
+        label="Направление"
+        error={errors.directionId?.message}
+        value={watch("directionId")}
+        onChange={(e) => setValue("directionId", e.target.value)}
+        options={[
+          { value: "", label: "Выберите направление" },
+          ...(directions?.map((d) => ({
+            value: d._id,
+            label: `${d.country?.flag || ""} ${d.name}`.trim(),
+          })) || []),
+        ]}
+      />
+
       <Input
         label="Telegram Chat ID"
         placeholder="-100xxxxxxxxxx"
-        hint="ID группы или канала в Telegram"
-        error={errors.telegramChatId?.message}
-        {...register("telegramChatId")}
+        hint="Опционально. Заполняется автоматически при добавлении бота в группу"
+        error={errors.chatId?.message}
+        {...register("chatId")}
       />
 
-      <Textarea label="Описание" {...register("description")} />
+      <Input
+        label="Ссылка для вступления"
+        placeholder="https://t.me/joinchat/..."
+        hint="Опционально"
+        error={errors.inviteLink?.message}
+        {...register("inviteLink")}
+      />
 
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-gray-700">Активна</span>

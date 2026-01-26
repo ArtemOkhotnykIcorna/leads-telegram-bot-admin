@@ -1,21 +1,37 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sourcesApi } from "@/api";
-import type { CreateSourceDto, UpdateSourceDto } from "@/types";
+import type {
+  CreateSourceDto,
+  UpdateSourceDto,
+  LinkPendingSourceDto,
+} from "@/types";
 import toast from "react-hot-toast";
 
 const QUERY_KEY = ["sources"];
 
-export function useSources() {
+// Шаблоны парсинга
+export function useParsingTemplates() {
   return useQuery({
-    queryKey: QUERY_KEY,
-    queryFn: sourcesApi.getAll,
+    queryKey: [...QUERY_KEY, "parsing-templates"],
+    queryFn: sourcesApi.getParsingTemplates,
+    staleTime: Infinity, // Шаблоны не меняются
   });
 }
 
-export function useActiveSources() {
+// Зарегистрированные источники
+export function useSources(directionId?: string) {
   return useQuery({
-    queryKey: [...QUERY_KEY, "active"],
-    queryFn: sourcesApi.getActive,
+    queryKey: directionId ? [...QUERY_KEY, { directionId }] : QUERY_KEY,
+    queryFn: () => sourcesApi.getAll(directionId),
+  });
+}
+
+export function useActiveSources(directionId?: string) {
+  return useQuery({
+    queryKey: directionId
+      ? [...QUERY_KEY, "active", { directionId }]
+      : [...QUERY_KEY, "active"],
+    queryFn: () => sourcesApi.getActive(directionId),
   });
 }
 
@@ -27,6 +43,16 @@ export function useSource(id: string) {
   });
 }
 
+// Ожидающие источники
+export function usePendingSources() {
+  return useQuery({
+    queryKey: [...QUERY_KEY, "pending"],
+    queryFn: sourcesApi.getPending,
+    refetchInterval: 30000, // Обновлять каждые 30 секунд
+  });
+}
+
+// Мутации для зарегистрированных источников
 export function useCreateSource() {
   const queryClient = useQueryClient();
 
@@ -110,6 +136,42 @@ export function useDeleteSource() {
       error: Error & { response?: { data?: { message?: string } } },
     ) => {
       toast.error(error.response?.data?.message || "Ошибка удаления");
+    },
+  });
+}
+
+// Мутации для pending источников
+export function useLinkPendingSource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: LinkPendingSourceDto }) =>
+      sourcesApi.linkPending(id, dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success("Источник подключен к направлениям");
+    },
+    onError: (
+      error: Error & { response?: { data?: { message?: string } } },
+    ) => {
+      toast.error(error.response?.data?.message || "Ошибка привязки источника");
+    },
+  });
+}
+
+export function useRejectPendingSource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => sourcesApi.rejectPending(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success("Источник отклонён");
+    },
+    onError: (
+      error: Error & { response?: { data?: { message?: string } } },
+    ) => {
+      toast.error(error.response?.data?.message || "Ошибка отклонения");
     },
   });
 }

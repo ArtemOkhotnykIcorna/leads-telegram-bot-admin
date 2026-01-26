@@ -1,14 +1,7 @@
 import { useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/layout";
-import {
-  Button,
-  Modal,
-  Badge,
-  Card,
-  ConfirmDialog,
-  Switch,
-} from "@/components/ui";
+import { Button, Modal, Card, ConfirmDialog, Switch } from "@/components/ui";
 import { DataTable } from "@/components/shared";
 import {
   useCountries,
@@ -64,12 +57,7 @@ export function CountriesPage() {
       ),
     },
     {
-      accessorKey: "code",
-      header: "Код",
-      cell: ({ row }) => <Badge variant="default">{row.original.code}</Badge>,
-    },
-    {
-      accessorKey: "order",
+      accessorKey: "sortOrder",
       header: "Порядок",
     },
     {

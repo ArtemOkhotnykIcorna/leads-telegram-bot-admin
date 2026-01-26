@@ -9,9 +9,14 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useState } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import {
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { cn } from "@/lib/cn";
-import { Pagination, Spinner, EmptyState } from "@/components/ui";
+import { Pagination, Spinner, EmptyState, Button } from "@/components/ui";
 
 export interface DataTableProps<T> {
   data: T[];
@@ -23,6 +28,10 @@ export interface DataTableProps<T> {
     total: number;
     onPageChange: (page: number) => void;
   };
+  /** Включить клиентскую пагинацию (по умолчанию true) */
+  clientPagination?: boolean;
+  /** Размер страницы для клиентской пагинации */
+  pageSize?: number;
   emptyState?: {
     title?: string;
     description?: string;
@@ -35,6 +44,8 @@ export function DataTable<T>({
   columns,
   isLoading,
   pagination,
+  clientPagination = true,
+  pageSize = 20,
   emptyState,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -48,6 +59,11 @@ export function DataTable<T>({
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    initialState: {
+      pagination: {
+        pageSize,
+      },
+    },
   });
 
   if (isLoading) {
@@ -116,6 +132,7 @@ export function DataTable<T>({
         </table>
       </div>
 
+      {/* Серверная пагинация */}
       {pagination && (
         <div className="px-4 py-3 border-t border-gray-200">
           <Pagination
@@ -124,6 +141,44 @@ export function DataTable<T>({
             total={pagination.total}
             onPageChange={pagination.onPageChange}
           />
+        </div>
+      )}
+
+      {/* Клиентская пагинация */}
+      {!pagination && clientPagination && table.getPageCount() > 1 && (
+        <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+          <div className="text-sm text-gray-500">
+            Показано {table.getState().pagination.pageIndex * pageSize + 1}-
+            {Math.min(
+              (table.getState().pagination.pageIndex + 1) * pageSize,
+              data.length,
+            )}{" "}
+            из {data.length}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronLeft size={16} />
+              Назад
+            </Button>
+            <span className="text-sm text-gray-700">
+              Страница {table.getState().pagination.pageIndex + 1} из{" "}
+              {table.getPageCount()}
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Вперед
+              <ChevronRight size={16} />
+            </Button>
+          </div>
         </div>
       )}
     </div>

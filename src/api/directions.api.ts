@@ -6,8 +6,11 @@ import type {
 } from "@/types";
 
 export const directionsApi = {
-  getAll: async (): Promise<Direction[]> => {
-    const { data } = await api.get<Direction[]>("/admin/directions");
+  getAll: async (countryId?: string): Promise<Direction[]> => {
+    const params = countryId ? { countryId } : undefined;
+    const { data } = await api.get<Direction[]>("/admin/directions", {
+      params,
+    });
     return data;
   },
 

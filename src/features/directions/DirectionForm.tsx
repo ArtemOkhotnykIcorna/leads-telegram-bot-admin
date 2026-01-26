@@ -7,13 +7,16 @@ import {
   useCreateDirection,
   useUpdateDirection,
 } from "@/hooks/queries/useDirections";
-import { Button, Input, Textarea, Switch } from "@/components/ui";
+import { useActiveCountries } from "@/hooks/queries/useCountries";
+import { Button, Input, Textarea, Switch, Select } from "@/components/ui";
 
 const directionSchema = z.object({
   name: z.string().min(1, "Обязательное поле"),
+  slug: z.string().min(1, "Обязательное поле"),
   description: z.string().optional(),
-  order: z.coerce.number().min(0).default(0),
+  countryId: z.string().min(1, "Выберите страну"),
   isActive: z.boolean().default(true),
+  requiresSubscription: z.boolean().default(false),
 });
 
 type DirectionFormData = z.infer<typeof directionSchema>;
@@ -26,6 +29,7 @@ interface DirectionFormProps {
 export function DirectionForm({ directionId, onSuccess }: DirectionFormProps) {
   const isEditing = !!directionId;
   const { data: direction } = useDirection(directionId || "");
+  const { data: countries } = useActiveCountries();
   const createMutation = useCreateDirection();
   const updateMutation = useUpdateDirection();
 
@@ -40,9 +44,11 @@ export function DirectionForm({ directionId, onSuccess }: DirectionFormProps) {
     resolver: zodResolver(directionSchema),
     defaultValues: {
       name: "",
+      slug: "",
       description: "",
-      order: 0,
+      countryId: "",
       isActive: true,
+      requiresSubscription: false,
     },
   });
 
@@ -50,9 +56,11 @@ export function DirectionForm({ directionId, onSuccess }: DirectionFormProps) {
     if (direction && isEditing) {
       reset({
         name: direction.name,
+        slug: direction.slug,
         description: direction.description || "",
-        order: direction.order,
+        countryId: direction.countryId || direction.country?._id || "",
         isActive: direction.isActive,
+        requiresSubscription: direction.requiresSubscription || false,
       });
     }
   }, [direction, isEditing, reset]);
@@ -76,20 +84,44 @@ export function DirectionForm({ directionId, onSuccess }: DirectionFormProps) {
         {...register("name")}
       />
 
-      <Textarea label="Описание" {...register("description")} />
-
       <Input
-        label="Порядок сортировки"
-        type="number"
-        error={errors.order?.message}
-        {...register("order")}
+        label="Slug"
+        placeholder="crypto, realestate..."
+        error={errors.slug?.message}
+        {...register("slug")}
       />
+
+      <Select
+        label="Страна"
+        error={errors.countryId?.message}
+        value={watch("countryId")}
+        onChange={(e) => setValue("countryId", e.target.value)}
+        options={[
+          { value: "", label: "Выберите страну" },
+          ...(countries?.map((c) => ({
+            value: c._id,
+            label: `${c.flag} ${c.name}`,
+          })) || []),
+        ]}
+      />
+
+      <Textarea label="Описание" {...register("description")} />
 
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-gray-700">Активно</span>
         <Switch
           checked={watch("isActive")}
           onChange={(checked) => setValue("isActive", checked)}
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-gray-700">
+          Требуется подписка
+        </span>
+        <Switch
+          checked={watch("requiresSubscription")}
+          onChange={(checked) => setValue("requiresSubscription", checked)}
         />
       </div>
 

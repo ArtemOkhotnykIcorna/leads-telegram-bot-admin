@@ -1,26 +1,24 @@
 export interface Country {
   _id: string;
   name: string;
-  code: string;
   flag: string;
-  order: number;
   isActive: boolean;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateCountryDto {
   name: string;
-  code: string;
+  slug: string;
   flag?: string;
-  order?: number;
   isActive?: boolean;
 }
 
 export interface UpdateCountryDto {
   name?: string;
-  code?: string;
+  slug?: string;
   flag?: string;
-  order?: number;
+  sortOrder?: number;
   isActive?: boolean;
 }

@@ -11,9 +11,8 @@ import { Button, Input, Switch } from "@/components/ui";
 
 const countrySchema = z.object({
   name: z.string().min(1, "Обязательное поле"),
-  code: z.string().min(2, "Минимум 2 символа").max(3, "Максимум 3 символа"),
+  slug: z.string().min(2, "Минимум 2 символа").toLowerCase(),
   flag: z.string().optional(),
-  order: z.coerce.number().min(0).default(0),
   isActive: z.boolean().default(true),
 });
 
@@ -41,9 +40,8 @@ export function CountryForm({ countryId, onSuccess }: CountryFormProps) {
     resolver: zodResolver(countrySchema),
     defaultValues: {
       name: "",
-      code: "",
+      slug: "",
       flag: "",
-      order: 0,
       isActive: true,
     },
   });
@@ -52,9 +50,8 @@ export function CountryForm({ countryId, onSuccess }: CountryFormProps) {
     if (country && isEditing) {
       reset({
         name: country.name,
-        code: country.code,
+        slug: "", // slug не возвращается бэкендом, оставляем пустым при редактировании
         flag: country.flag || "",
-        order: country.order,
         isActive: country.isActive,
       });
     }
@@ -80,20 +77,13 @@ export function CountryForm({ countryId, onSuccess }: CountryFormProps) {
       />
 
       <Input
-        label="Код (ISO)"
-        placeholder="UA, RU, US..."
-        error={errors.code?.message}
-        {...register("code")}
+        label="Slug"
+        placeholder="ukraine, russia, usa..."
+        error={errors.slug?.message}
+        {...register("slug")}
       />
 
       <Input label="Флаг (эмодзи)" placeholder="🇺🇦" {...register("flag")} />
-
-      <Input
-        label="Порядок сортировки"
-        type="number"
-        error={errors.order?.message}
-        {...register("order")}
-      />
 
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-gray-700">Активна</span>

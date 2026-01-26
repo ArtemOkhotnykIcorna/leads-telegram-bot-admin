@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
@@ -16,16 +17,27 @@ export function useAuth() {
     logout: storeLogout,
     setLoading,
     setAdmin,
+    setTokens,
     refreshToken,
   } = useAuthStore();
 
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: (data: LoginRequest) => authApi.login(data),
-    onSuccess: (response) => {
-      storeLogin(response.accessToken, response.refreshToken, response.admin);
-      toast.success("Добро пожаловать!");
-      navigate("/");
+    onSuccess: async (response) => {
+      // Сохраняем токены
+      setTokens(response.accessToken, response.refreshToken);
+
+      // Получаем данные об админе
+      try {
+        const adminData = await authApi.getMe();
+        storeLogin(response.accessToken, response.refreshToken, adminData);
+        toast.success("Добро пожаловать!");
+        navigate("/");
+      } catch {
+        toast.error("Не удалось получить данные пользователя");
+        storeLogout();
+      }
     },
     onError: (
       error: Error & { response?: { data?: { message?: string } } },
@@ -60,21 +72,21 @@ export function useAuth() {
   };
 
   // Check auth on app load
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     setLoading(true);
     try {
-      if (isAuthenticated) {
-        const { data } = await fetchMe();
-        if (data) {
-          setAdmin(data);
-        }
+      const { data } = await fetchMe();
+      if (data) {
+        setAdmin(data);
+      } else {
+        storeLogout();
       }
     } catch {
       storeLogout();
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchMe, setAdmin, setLoading, storeLogout]);
 
   return {
     admin,

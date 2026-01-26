@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
+import { useAuth } from "@/hooks/useAuth";
 import { Spinner } from "@/components/ui";
 import type { AdminPermissions } from "@/types";
 
@@ -10,10 +12,18 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children, requiredPermission }: AuthGuardProps) {
   const location = useLocation();
-  const { isAuthenticated, isLoading, admin } = useAuthStore();
+  const { isAuthenticated, isLoading, admin, _hasHydrated } = useAuthStore();
+  const { checkAuth } = useAuth();
 
-  // Показываем загрузку пока проверяем авторизацию
-  if (isLoading) {
+  // Загружаем данные об админе если токен есть, но админ не загружен
+  useEffect(() => {
+    if (_hasHydrated && isAuthenticated && !admin && !isLoading) {
+      checkAuth();
+    }
+  }, [_hasHydrated, isAuthenticated, admin, isLoading, checkAuth]);
+
+  // Показываем загрузку пока данные не загрузятся из localStorage
+  if (!_hasHydrated || isLoading || (isAuthenticated && !admin)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

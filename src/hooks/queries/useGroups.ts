@@ -1,21 +1,30 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { groupsApi } from "@/api";
-import type { CreateGroupDto, UpdateGroupDto } from "@/types";
+import type {
+  CreateGroupDto,
+  UpdateGroupDto,
+  LinkPendingGroupDto,
+} from "@/types";
 import toast from "react-hot-toast";
 
 const QUERY_KEY = ["groups"];
+const PENDING_QUERY_KEY = ["groups", "pending"];
 
-export function useGroups() {
+// === Зарегистрированные группы ===
+
+export function useGroups(directionId?: string) {
   return useQuery({
-    queryKey: QUERY_KEY,
-    queryFn: groupsApi.getAll,
+    queryKey: directionId ? [...QUERY_KEY, { directionId }] : QUERY_KEY,
+    queryFn: () => groupsApi.getAll(directionId),
   });
 }
 
-export function useActiveGroups() {
+export function useActiveGroups(directionId?: string) {
   return useQuery({
-    queryKey: [...QUERY_KEY, "active"],
-    queryFn: groupsApi.getActive,
+    queryKey: directionId
+      ? [...QUERY_KEY, "active", { directionId }]
+      : [...QUERY_KEY, "active"],
+    queryFn: () => groupsApi.getActive(directionId),
   });
 }
 
@@ -110,6 +119,52 @@ export function useDeleteGroup() {
       error: Error & { response?: { data?: { message?: string } } },
     ) => {
       toast.error(error.response?.data?.message || "Ошибка удаления");
+    },
+  });
+}
+
+// === Ожидающие группы (PendingGroup) ===
+
+export function usePendingGroups() {
+  return useQuery({
+    queryKey: PENDING_QUERY_KEY,
+    queryFn: groupsApi.getPending,
+    refetchInterval: 30000, // Обновлять каждые 30 сек
+  });
+}
+
+export function useLinkPendingGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: LinkPendingGroupDto }) =>
+      groupsApi.linkPending(id, dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: PENDING_QUERY_KEY });
+      toast.success("Группа привязана к направлению");
+    },
+    onError: (
+      error: Error & { response?: { data?: { message?: string } } },
+    ) => {
+      toast.error(error.response?.data?.message || "Ошибка привязки группы");
+    },
+  });
+}
+
+export function useRejectPendingGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => groupsApi.rejectPending(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PENDING_QUERY_KEY });
+      toast.success("Группа отклонена");
+    },
+    onError: (
+      error: Error & { response?: { data?: { message?: string } } },
+    ) => {
+      toast.error(error.response?.data?.message || "Ошибка отклонения группы");
     },
   });
 }

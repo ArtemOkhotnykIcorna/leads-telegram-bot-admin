@@ -1,39 +1,55 @@
 import api from "./axios";
-import type { Group, CreateGroupDto, UpdateGroupDto } from "@/types";
+import type {
+  TelegramGroup,
+  PendingGroup,
+  CreateGroupDto,
+  UpdateGroupDto,
+  LinkPendingGroupDto,
+} from "@/types";
 
 export const groupsApi = {
-  getAll: async (): Promise<Group[]> => {
-    const { data } = await api.get<Group[]>("/admin/groups");
+  // === Зарегистрированные группы (TelegramGroup) ===
+
+  getAll: async (directionId?: string): Promise<TelegramGroup[]> => {
+    const params = directionId ? { directionId } : undefined;
+    const { data } = await api.get<TelegramGroup[]>("/admin/groups", {
+      params,
+    });
     return data;
   },
 
-  getActive: async (): Promise<Group[]> => {
-    const { data } = await api.get<Group[]>("/admin/groups/active");
+  getActive: async (directionId?: string): Promise<TelegramGroup[]> => {
+    const params = directionId ? { directionId } : undefined;
+    const { data } = await api.get<TelegramGroup[]>("/admin/groups/active", {
+      params,
+    });
     return data;
   },
 
-  getById: async (id: string): Promise<Group> => {
-    const { data } = await api.get<Group>(`/admin/groups/${id}`);
+  getById: async (id: string): Promise<TelegramGroup> => {
+    const { data } = await api.get<TelegramGroup>(`/admin/groups/${id}`);
     return data;
   },
 
-  create: async (dto: CreateGroupDto): Promise<Group> => {
-    const { data } = await api.post<Group>("/admin/groups", dto);
+  create: async (dto: CreateGroupDto): Promise<TelegramGroup> => {
+    const { data } = await api.post<TelegramGroup>("/admin/groups", dto);
     return data;
   },
 
-  update: async (id: string, dto: UpdateGroupDto): Promise<Group> => {
-    const { data } = await api.put<Group>(`/admin/groups/${id}`, dto);
+  update: async (id: string, dto: UpdateGroupDto): Promise<TelegramGroup> => {
+    const { data } = await api.put<TelegramGroup>(`/admin/groups/${id}`, dto);
     return data;
   },
 
-  toggle: async (id: string): Promise<Group> => {
-    const { data } = await api.patch<Group>(`/admin/groups/${id}/toggle`);
+  toggle: async (id: string): Promise<TelegramGroup> => {
+    const { data } = await api.patch<TelegramGroup>(
+      `/admin/groups/${id}/toggle`,
+    );
     return data;
   },
 
-  regenerateDeepLink: async (id: string): Promise<Group> => {
-    const { data } = await api.post<Group>(
+  regenerateDeepLink: async (id: string): Promise<TelegramGroup> => {
+    const { data } = await api.post<TelegramGroup>(
       `/admin/groups/${id}/regenerate-deeplink`,
     );
     return data;
@@ -41,5 +57,27 @@ export const groupsApi = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/admin/groups/${id}`);
+  },
+
+  // === Ожидающие группы (PendingGroup) ===
+
+  getPending: async (): Promise<PendingGroup[]> => {
+    const { data } = await api.get<PendingGroup[]>("/admin/groups/pending");
+    return data;
+  },
+
+  linkPending: async (
+    id: string,
+    dto: LinkPendingGroupDto,
+  ): Promise<TelegramGroup> => {
+    const { data } = await api.post<TelegramGroup>(
+      `/admin/groups/pending/${id}/link`,
+      dto,
+    );
+    return data;
+  },
+
+  rejectPending: async (id: string): Promise<void> => {
+    await api.delete(`/admin/groups/pending/${id}`);
   },
 };

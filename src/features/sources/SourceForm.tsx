@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -6,14 +6,20 @@ import {
   useSource,
   useCreateSource,
   useUpdateSource,
+  useParsingTemplates,
 } from "@/hooks/queries/useSources";
-import { Button, Input, Textarea, Select, Switch } from "@/components/ui";
+import { useDirections } from "@/hooks/queries/useDirections";
+import { Button, Input, Textarea, Select } from "@/components/ui";
 
 const sourceSchema = z.object({
   name: z.string().min(1, "Обязательное поле"),
-  type: z.enum(["api", "telegram", "webhook", "manual"]),
+  slug: z.string().optional(),
+  type: z.literal("telegram_group"),
   description: z.string().optional(),
-  webhookUrl: z.string().url().optional().or(z.literal("")),
+  telegramChatId: z.string().optional(),
+  telegramUsername: z.string().optional(),
+  directionIds: z.array(z.string()).min(1, "Выберите хотя бы одно направление"),
+  parsingTemplateKey: z.string().optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -24,16 +30,12 @@ interface SourceFormProps {
   onSuccess: () => void;
 }
 
-const sourceTypes = [
-  { value: "api", label: "API" },
-  { value: "telegram", label: "Telegram Bot" },
-  { value: "webhook", label: "Webhook" },
-  { value: "manual", label: "Ручной ввод" },
-];
-
 export function SourceForm({ sourceId, onSuccess }: SourceFormProps) {
+  const [selectedDirections, setSelectedDirections] = useState<string[]>([]);
   const isEditing = !!sourceId;
   const { data: source } = useSource(sourceId || "");
+  const { data: directions } = useDirections();
+  const { data: templates } = useParsingTemplates();
   const createMutation = useCreateSource();
   const updateMutation = useUpdateSource();
 
@@ -48,22 +50,36 @@ export function SourceForm({ sourceId, onSuccess }: SourceFormProps) {
     resolver: zodResolver(sourceSchema),
     defaultValues: {
       name: "",
-      type: "api",
+      slug: "",
+      type: "telegram_group",
       description: "",
-      webhookUrl: "",
+      telegramChatId: "",
+      telegramUsername: "",
+      directionIds: [],
+      parsingTemplateKey: "universal",
       isActive: true,
     },
   });
 
-  const selectedType = watch("type");
+  const selectedTemplate = watch("parsingTemplateKey");
 
   useEffect(() => {
     if (source && isEditing) {
+      // Обрабатываем directionIds - могут быть как объекты, так и строки
+      const dirIds =
+        source.directionIds?.map((d) =>
+          typeof d === "object" && d !== null ? d._id : d,
+        ) || [];
+      setSelectedDirections(dirIds);
       reset({
         name: source.name,
-        type: source.type,
+        slug: source.slug,
+        type: "telegram_group",
         description: source.description || "",
-        webhookUrl: source.webhookUrl || "",
+        telegramChatId: source.telegramChatId || "",
+        telegramUsername: source.telegramUsername || "",
+        directionIds: dirIds,
+        parsingTemplateKey: "universal",
         isActive: source.isActive,
       });
     }
@@ -71,16 +87,39 @@ export function SourceForm({ sourceId, onSuccess }: SourceFormProps) {
 
   const onSubmit = async (data: SourceFormData) => {
     const payload = {
-      ...data,
-      webhookUrl: data.webhookUrl || undefined,
+      name: data.name,
+      slug: data.slug || undefined,
+      type: "telegram_group" as const,
+      description: data.description || undefined,
+      telegramChatId: data.telegramChatId || undefined,
+      telegramUsername: data.telegramUsername || undefined,
+      directionIds: data.directionIds,
+      isActive: data.isActive,
     };
 
     if (isEditing) {
-      await updateMutation.mutateAsync({ id: sourceId!, dto: payload });
+      await updateMutation.mutateAsync({
+        id: sourceId!,
+        dto: {
+          name: payload.name,
+          description: payload.description,
+          directionIds: payload.directionIds,
+          isActive: payload.isActive,
+        },
+      });
     } else {
       await createMutation.mutateAsync(payload);
     }
     onSuccess();
+  };
+
+  const handleDirectionToggle = (directionId: string) => {
+    const newSelection = selectedDirections.includes(directionId)
+      ? selectedDirections.filter((id) => id !== directionId)
+      : [...selectedDirections, directionId];
+
+    setSelectedDirections(newSelection);
+    setValue("directionIds", newSelection);
   };
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
@@ -93,32 +132,100 @@ export function SourceForm({ sourceId, onSuccess }: SourceFormProps) {
         {...register("name")}
       />
 
-      <Select
-        label="Тип источника"
-        options={sourceTypes}
-        value={selectedType}
-        onChange={(e) =>
-          setValue("type", e.target.value as SourceFormData["type"])
-        }
-        error={errors.type?.message}
-      />
-
-      <Textarea label="Описание" {...register("description")} />
-
-      {selectedType === "webhook" && (
+      {!isEditing && (
         <Input
-          label="Webhook URL"
-          placeholder="https://..."
-          error={errors.webhookUrl?.message}
-          {...register("webhookUrl")}
+          label="Slug (опционально)"
+          placeholder="crypto-leads-ua"
+          {...register("slug")}
         />
       )}
 
+      {/* Telegram поля */}
+      {!isEditing && (
+        <>
+          <Input
+            label="Telegram Chat ID"
+            placeholder="-1001234567890"
+            {...register("telegramChatId")}
+          />
+          <Input
+            label="@username (опционально)"
+            placeholder="@channel_name"
+            {...register("telegramUsername")}
+          />
+        </>
+      )}
+
+      {/* Выбор направлений */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Направления *
+        </label>
+        <div className="border rounded-lg divide-y max-h-40 overflow-y-auto">
+          {directions?.map((direction) => (
+            <label
+              key={direction._id}
+              className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={selectedDirections.includes(direction._id)}
+                onChange={() => handleDirectionToggle(direction._id)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="font-medium text-gray-900">
+                {direction.name}
+              </span>
+              {direction.country && (
+                <span className="text-sm text-gray-500">
+                  {direction.country.flag}
+                </span>
+              )}
+            </label>
+          ))}
+        </div>
+        {errors.directionIds && (
+          <p className="mt-1 text-sm text-red-600">
+            {errors.directionIds.message}
+          </p>
+        )}
+      </div>
+
+      {/* Шаблон парсинга (только для создания) */}
+      {!isEditing && (
+        <div>
+          <Select
+            label="Шаблон парсинга"
+            options={[
+              { value: "", label: "Не выбран" },
+              ...(templates?.map((t) => ({
+                value: t.key,
+                label: t.name,
+              })) || []),
+            ]}
+            value={selectedTemplate || ""}
+            onChange={(e) => setValue("parsingTemplateKey", e.target.value)}
+          />
+          {selectedTemplate && templates && (
+            <p className="mt-1 text-xs text-gray-500">
+              {templates.find((t) => t.key === selectedTemplate)?.description}
+            </p>
+          )}
+        </div>
+      )}
+
+      <Textarea
+        label="Описание"
+        placeholder="Описание источника..."
+        {...register("description")}
+      />
+
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-gray-700">Активен</span>
-        <Switch
-          checked={watch("isActive")}
-          onChange={(checked) => setValue("isActive", checked)}
+        <input
+          type="checkbox"
+          {...register("isActive")}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
         />
       </div>
 

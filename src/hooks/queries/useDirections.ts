@@ -5,10 +5,10 @@ import toast from "react-hot-toast";
 
 const QUERY_KEY = ["directions"];
 
-export function useDirections() {
+export function useDirections(countryId?: string) {
   return useQuery({
-    queryKey: QUERY_KEY,
-    queryFn: directionsApi.getAll,
+    queryKey: countryId ? [...QUERY_KEY, { countryId }] : QUERY_KEY,
+    queryFn: () => directionsApi.getAll(countryId),
   });
 }
 
