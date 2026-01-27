@@ -1,4 +1,12 @@
-import { Users, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Users,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Copy,
+  SkipForward,
+} from "lucide-react";
 import { PageHeader } from "@/components/layout";
 import { StatCard } from "@/components/shared";
 import { Card, Spinner } from "@/components/ui";
@@ -31,13 +39,13 @@ export function DashboardPage() {
           icon={<FileText size={24} />}
         />
         <StatCard
-          title="Лидов сегодня"
-          value={formatNumber(stats?.todayTotal || 0)}
-          icon={<Users size={24} />}
+          title="Новых"
+          value={formatNumber(stats?.new || 0)}
+          icon={<Clock size={24} />}
         />
         <StatCard
-          title="Успешно отправлено"
-          value={formatNumber(stats?.sent || 0)}
+          title="Опубликовано"
+          value={formatNumber(stats?.published || 0)}
           icon={<CheckCircle size={24} />}
         />
         <StatCard
@@ -55,35 +63,57 @@ export function DashboardPage() {
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Ожидают</span>
-              <span className="font-medium">{stats?.pending || 0}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">В обработке</span>
-              <span className="font-medium">{stats?.processing || 0}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Отправлены</span>
-              <span className="font-medium text-green-600">
-                {stats?.sent || 0}
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-blue-500" />
+                <span className="text-gray-600">Новые</span>
+              </div>
+              <span className="font-medium text-blue-600">
+                {stats?.new || 0}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Доставлены</span>
-              <span className="font-medium text-green-600">
-                {stats?.delivered || 0}
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-amber-500 animate-spin" />
+                <span className="text-gray-600">В обработке</span>
+              </div>
+              <span className="font-medium text-amber-600">
+                {stats?.processing || 0}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Ошибки</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle size={16} className="text-green-500" />
+                <span className="text-gray-600">Опубликованы</span>
+              </div>
+              <span className="font-medium text-green-600">
+                {stats?.published || 0}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle size={16} className="text-red-500" />
+                <span className="text-gray-600">Ошибки</span>
+              </div>
               <span className="font-medium text-red-600">
                 {stats?.failed || 0}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Отклонены</span>
+              <div className="flex items-center gap-2">
+                <Copy size={16} className="text-gray-400" />
+                <span className="text-gray-600">Дубликаты</span>
+              </div>
               <span className="font-medium text-gray-500">
-                {stats?.rejected || 0}
+                {stats?.duplicate || 0}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <SkipForward size={16} className="text-gray-400" />
+                <span className="text-gray-600">Пропущены</span>
+              </div>
+              <span className="font-medium text-gray-400">
+                {stats?.skipped || 0}
               </span>
             </div>
           </div>

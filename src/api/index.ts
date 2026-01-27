@@ -7,4 +7,5 @@ export { groupsApi } from "./groups.api";
 export { sourcesApi } from "./sources.api";
 export { routingApi } from "./routing.api";
 export { leadsApi } from "./leads.api";
+export { paymentsApi } from "./payments.api";
 export { analyticsApi } from "./analytics.api";

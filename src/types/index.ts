@@ -27,6 +27,9 @@ export * from "./routing.types";
 // Lead types
 export * from "./lead.types";
 
+// Payment types
+export * from "./payment.types";
+
 // Analytics types
 export * from "./analytics.types";
 

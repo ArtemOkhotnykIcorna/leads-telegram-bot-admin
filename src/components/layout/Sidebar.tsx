@@ -12,6 +12,7 @@ import {
   GitBranch,
   FileText,
   BarChart3,
+  CreditCard,
   ChevronLeft,
   ChevronRight,
   X,
@@ -72,6 +73,12 @@ const navItems: NavItem[] = [
     href: "/leads",
     icon: <FileText size={20} />,
     permission: "manageSources",
+  },
+  {
+    label: "Платежи",
+    href: "/payments",
+    icon: <CreditCard size={20} />,
+    permission: "viewAnalytics",
   },
   {
     label: "Аналитика",

@@ -12,6 +12,7 @@ import { GroupsPage } from "@/features/groups";
 import { SourcesPage } from "@/features/sources";
 import { RoutingPage } from "@/features/routing";
 import { LeadsPage } from "@/features/leads";
+import { PaymentsPage } from "@/features/payments";
 import { AnalyticsPage } from "@/features/analytics";
 import { NotFoundPage, ForbiddenPage } from "@/features/errors";
 
@@ -103,6 +104,16 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute permission="manageSources">
             <LeadsPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Payments
+      {
+        path: "payments",
+        element: (
+          <ProtectedRoute permission="viewAnalytics">
+            <PaymentsPage />
           </ProtectedRoute>
         ),
       },
