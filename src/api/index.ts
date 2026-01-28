@@ -8,4 +8,6 @@ export { sourcesApi } from "./sources.api";
 export { routingApi } from "./routing.api";
 export { leadsApi } from "./leads.api";
 export { paymentsApi } from "./payments.api";
+export { subscriptionPlansApi } from "./subscription-plans.api";
 export { analyticsApi } from "./analytics.api";
+export { usersApi } from "./users.api";

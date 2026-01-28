@@ -46,14 +46,21 @@ export const paymentsApi = {
     return data;
   },
 
-  // Все данные для дашборда
+  // Все данные для дашборда (включая topPayers и comparison)
   getDashboard: async (
+    period: StatsPeriod = "month",
     currency: Currency = "usd",
   ): Promise<PaymentsDashboardData> => {
     const { data } = await api.get<PaymentsDashboardData>(
       "/admin/payments/dashboard",
-      { params: { currency } },
+      { params: { period, currency } },
     );
+    return data;
+  },
+
+  // Debug endpoint для отладки данных
+  getDebug: async (): Promise<unknown> => {
+    const { data } = await api.get("/admin/payments/debug");
     return data;
   },
 

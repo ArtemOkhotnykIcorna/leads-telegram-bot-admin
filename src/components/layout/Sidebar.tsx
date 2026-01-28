@@ -13,9 +13,11 @@ import {
   FileText,
   BarChart3,
   CreditCard,
+  Tag,
   ChevronLeft,
   ChevronRight,
   X,
+  UserCircle,
 } from "lucide-react";
 import type { AdminPermissions } from "@/types";
 
@@ -37,6 +39,12 @@ const navItems: NavItem[] = [
     href: "/admins",
     icon: <Users size={20} />,
     permission: "manageAdmins",
+  },
+  {
+    label: "Пользователи",
+    href: "/users",
+    icon: <UserCircle size={20} />,
+    permission: "viewAnalytics",
   },
   {
     label: "Страны",
@@ -78,6 +86,12 @@ const navItems: NavItem[] = [
     label: "Платежи",
     href: "/payments",
     icon: <CreditCard size={20} />,
+    permission: "viewAnalytics",
+  },
+  {
+    label: "Тарифы",
+    href: "/plans",
+    icon: <Tag size={20} />,
     permission: "viewAnalytics",
   },
   {

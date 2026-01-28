@@ -40,6 +40,16 @@ export { LeadFilters } from "./leads/LeadFilters";
 // Analytics
 export { AnalyticsPage } from "./analytics/AnalyticsPage";
 
+// Subscription Plans
+export { PlansPage } from "./subscription-plans/PlansPage";
+export { PlanForm } from "./subscription-plans/PlanForm";
+
+// Users
+export { UsersPage } from "./users/UsersPage";
+export { UserForm } from "./users/UserForm";
+export { ActivateSubscriptionModal } from "./users/ActivateSubscriptionModal";
+export { UserDetailsModal } from "./users/UserDetailsModal";
+
 // Errors
 export { NotFoundPage } from "./errors/NotFoundPage";
 export { ForbiddenPage } from "./errors/ForbiddenPage";

@@ -13,7 +13,9 @@ import { SourcesPage } from "@/features/sources";
 import { RoutingPage } from "@/features/routing";
 import { LeadsPage } from "@/features/leads";
 import { PaymentsPage } from "@/features/payments";
+import { PlansPage } from "@/features/subscription-plans";
 import { AnalyticsPage } from "@/features/analytics";
+import { UsersPage } from "@/features/users";
 import { NotFoundPage, ForbiddenPage } from "@/features/errors";
 
 export const router = createBrowserRouter([
@@ -108,12 +110,32 @@ export const router = createBrowserRouter([
         ),
       },
 
+      // Users
+      {
+        path: "users",
+        element: (
+          <ProtectedRoute permission="viewAnalytics">
+            <UsersPage />
+          </ProtectedRoute>
+        ),
+      },
+
       // Payments
       {
         path: "payments",
         element: (
           <ProtectedRoute permission="viewAnalytics">
             <PaymentsPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Subscription Plans
+      {
+        path: "plans",
+        element: (
+          <ProtectedRoute permission="viewAnalytics">
+            <PlansPage />
           </ProtectedRoute>
         ),
       },

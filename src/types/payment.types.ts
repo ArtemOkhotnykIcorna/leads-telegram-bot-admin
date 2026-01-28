@@ -69,6 +69,23 @@ export interface BreakdownItem {
   revenue: number;
 }
 
+// Сравнение периодов (встроенное в dashboard)
+export interface PeriodComparisonInline {
+  previous: PaymentsSummary;
+  changes: {
+    revenue: {
+      absolute: number;
+      percent: number;
+      direction: ChangeDirection;
+    };
+    payments: {
+      absolute: number;
+      percent: number;
+      direction: ChangeDirection;
+    };
+  };
+}
+
 // Данные для дашборда
 export interface PaymentsDashboardData {
   summary: PaymentsSummary;
@@ -81,6 +98,10 @@ export interface PaymentsDashboardData {
     byType: BreakdownItem[];
     byCurrency: BreakdownItem[];
   };
+  /** Топ плательщиков (5 записей) */
+  topPayers: TopPayer[];
+  /** Сравнение с предыдущим периодом (null для period=all) */
+  comparison: PeriodComparisonInline | null;
 }
 
 // Бухгалтерский отчёт

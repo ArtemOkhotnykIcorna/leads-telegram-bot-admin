@@ -30,8 +30,14 @@ export * from "./lead.types";
 // Payment types
 export * from "./payment.types";
 
+// Subscription Plan types
+export * from "./subscription-plan.types";
+
 // Analytics types
 export * from "./analytics.types";
+
+// User types
+export * from "./user.types";
 
 // Common types
 export interface PaginationParams {

@@ -23,7 +23,10 @@
 - **Графики** — выручка и подписки по времени
 - **Разбивки** — по типам, валютам, периодам
 - **Бухгалтерия** — отчёты, топ плательщиков, экспорт транзакций
-- **Сравнение периодов** — текущий vs предыдущий
+- **Сравнение периодов** — текущий vs предыдущий (встроено в dashboard)
+- **Debug endpoint** — отладка данных в БД
+
+> **Важно:** Суммы хранятся в базовых единицах валюты (доллары/евро/рубли), а не в центах/копейках.
 
 **Base URL:** `/api/admin/payments`
 
@@ -83,11 +86,11 @@ type ChangeDirection = 'up' | 'down' | 'same';
 interface PaymentsSummary {
   /** Общее количество платежей */
   totalPayments: number;
-  /** Общая выручка (в минимальных единицах: центы/копейки) */
+  /** Общая выручка (в базовых единицах: доллары/евро/рубли) */
   totalRevenue: number;
   /** Форматированная выручка (например, "$1,234.56") */
   totalRevenueFormatted: string;
-  /** Средний платёж (в минимальных единицах) */
+  /** Средний платёж (в базовых единицах) */
   avgPayment: number;
   /** Форматированный средний платёж */
   avgPaymentFormatted: string;
@@ -119,7 +122,7 @@ interface SubscriptionStats {
  * MRR (Monthly Recurring Revenue)
  */
 interface MRRData {
-  /** Текущий MRR (в минимальных единицах) */
+  /** Текущий MRR (в базовых единицах валюты) */
   currentMRR: number;
   /** Форматированный текущий MRR */
   currentMRRFormatted: string;
@@ -150,6 +153,31 @@ interface DashboardData {
     byType: BreakdownItem[];
     byCurrency: BreakdownItem[];
   };
+  /** Топ плательщиков (5 записей) */
+  topPayers: TopPayer[];
+  /** Сравнение с предыдущим периодом (null для period=all) */
+  comparison: PeriodComparisonInline | null;
+}
+
+/**
+ * Сравнение периодов (встроенное в dashboard)
+ */
+interface PeriodComparisonInline {
+  /** Данные за предыдущий период */
+  previous: PaymentsSummary;
+  /** Изменения */
+  changes: {
+    revenue: {
+      absolute: number;
+      percent: number;
+      direction: ChangeDirection;
+    };
+    payments: {
+      absolute: number;
+      percent: number;
+      direction: ChangeDirection;
+    };
+  };
 }
 
 /**
@@ -174,7 +202,7 @@ interface BreakdownItem {
   currency?: string;
   /** Количество платежей */
   count: number;
-  /** Выручка (в минимальных единицах) */
+  /** Выручка (в базовых единицах валюты) */
   revenue: number;
 }
 
@@ -247,7 +275,7 @@ interface ExportTransaction {
   type: PaymentRecordType;
   /** Статус */
   status: 'pending' | 'completed' | 'failed' | 'refunded' | 'cancelled';
-  /** Сумма (в минимальных единицах) */
+  /** Сумма (в базовых единицах валюты) */
   amount: number;
   /** Форматированная сумма */
   amountFormatted: string;
@@ -397,13 +425,21 @@ MRR (Monthly Recurring Revenue) метрики.
 
 #### GET `/api/admin/payments/dashboard`
 
-Все ключевые метрики для дашборда одним запросом.
+Все ключевые метрики для дашборда одним запросом. Включает топ плательщиков и сравнение с предыдущим периодом.
 
 **Query параметры:**
 
-| Параметр   | Тип        | По умолчанию | Описание           |
-| ---------- | ---------- | ------------ | ------------------ |
-| `currency` | `Currency` | `usd`        | Валюта для расчёта |
+| Параметр   | Тип           | По умолчанию | Описание                          |
+| ---------- | ------------- | ------------ | --------------------------------- |
+| `period`   | `StatsPeriod` | `month`      | Период для статистики и сравнения |
+| `currency` | `Currency`    | `usd`        | Валюта для расчёта                |
+
+**Пример запроса:**
+
+```http
+GET /api/admin/payments/dashboard?period=month&currency=usd
+Authorization: Bearer <token>
+```
 
 **Пример ответа:**
 
@@ -411,10 +447,10 @@ MRR (Monthly Recurring Revenue) метрики.
 {
   "summary": {
     "totalPayments": 156,
-    "totalRevenue": 1560000,
-    "totalRevenueFormatted": "$15,600",
-    "avgPayment": 10000,
-    "avgPaymentFormatted": "$100",
+    "totalRevenue": 15600,
+    "totalRevenueFormatted": "$15,600.00",
+    "avgPayment": 100,
+    "avgPaymentFormatted": "$100.00",
     "currency": "usd"
   },
   "subscriptions": {
@@ -426,32 +462,67 @@ MRR (Monthly Recurring Revenue) метрики.
     "churnRate": 4.88
   },
   "mrr": {
-    "currentMRR": 2340000,
-    "currentMRRFormatted": "$23,400",
-    "previousMRR": 2100000,
-    "growth": 240000,
+    "currentMRR": 23400,
+    "currentMRRFormatted": "$23,400.00",
+    "previousMRR": 21000,
+    "growth": 2400,
     "growthPercent": 11.43,
-    "projectedARR": 28080000,
-    "projectedARRFormatted": "$280,800"
+    "projectedARR": 280800,
+    "projectedARRFormatted": "$280,800.00"
   },
   "charts": {
     "revenue": [
-      { "date": "2026-01-01", "value": 50000, "count": 5 },
-      { "date": "2026-01-02", "value": 75000, "count": 8 }
+      { "date": "2026-01-01", "value": 500, "count": 5 },
+      { "date": "2026-01-02", "value": 750, "count": 8 }
     ]
   },
   "breakdown": {
     "byType": [
-      { "type": "subscription", "count": 120, "revenue": 1200000 },
-      { "type": "donation", "count": 36, "revenue": 360000 }
+      { "type": "subscription", "count": 120, "revenue": 12000 },
+      { "type": "donation", "count": 36, "revenue": 3600 }
     ],
     "byCurrency": [
-      { "currency": "usd", "count": 150, "revenue": 1500000 },
-      { "currency": "eur", "count": 6, "revenue": 60000 }
+      { "currency": "USD", "count": 150, "revenue": 15000 },
+      { "currency": "EUR", "count": 6, "revenue": 600 }
     ]
+  },
+  "topPayers": [
+    {
+      "telegramId": 123456789,
+      "username": "john_doe",
+      "firstName": "John",
+      "lastName": "Doe",
+      "totalSpent": 1200,
+      "paymentsCount": 12,
+      "lastPayment": "2026-01-25T14:30:00.000Z"
+    }
+  ],
+  "comparison": {
+    "previous": {
+      "totalPayments": 140,
+      "totalRevenue": 14000,
+      "totalRevenueFormatted": "$14,000.00",
+      "avgPayment": 100,
+      "avgPaymentFormatted": "$100.00",
+      "currency": "usd"
+    },
+    "changes": {
+      "revenue": {
+        "absolute": 1600,
+        "percent": 11.43,
+        "direction": "up"
+      },
+      "payments": {
+        "absolute": 16,
+        "percent": 11.43,
+        "direction": "up"
+      }
+    }
   }
 }
 ```
+
+> **Примечание:** При `period=all` поле `comparison` будет `null`, так как сравнение не имеет смысла.
 
 ---
 
@@ -769,7 +840,10 @@ interface PaymentsApi {
   ): Promise<PaymentsSummary>;
   getSubscriptions(): Promise<SubscriptionStats>;
   getMRR(currency?: Currency): Promise<MRRData>;
-  getDashboard(currency?: Currency): Promise<DashboardData>;
+  getDashboard(
+    period?: StatsPeriod,
+    currency?: Currency,
+  ): Promise<DashboardData>;
   getRevenueChart(
     period?: StatsPeriod,
     currency?: Currency,
@@ -821,9 +895,13 @@ class PaymentStatsClient implements PaymentsApi {
     return data;
   }
 
-  async getDashboard(currency: Currency = 'usd'): Promise<DashboardData> {
+  async getDashboard(
+    period: StatsPeriod = 'month',
+    currency: Currency = 'usd',
+  ): Promise<DashboardData> {
+    const params = new URLSearchParams({ period, currency });
     const { data } = await this.http.get(
-      `/api/admin/payments/dashboard?currency=${currency}`,
+      `/api/admin/payments/dashboard?${params}`,
     );
     return data;
   }
@@ -942,10 +1020,13 @@ const paymentsApi = new PaymentStatsClient(http);
 import { useQuery } from '@tanstack/react-query';
 import { paymentsApi } from '../api/client';
 
-export function usePaymentsDashboard(currency: Currency = 'usd') {
+export function usePaymentsDashboard(
+  period: StatsPeriod = 'month',
+  currency: Currency = 'usd',
+) {
   return useQuery({
-    queryKey: ['payments', 'dashboard', currency],
-    queryFn: () => paymentsApi.getDashboard(currency),
+    queryKey: ['payments', 'dashboard', period, currency],
+    queryFn: () => paymentsApi.getDashboard(period, currency),
     staleTime: 60 * 1000, // 1 минута
   });
 }
@@ -1071,21 +1152,46 @@ const StatCard: React.FC<StatCardProps> = ({
 );
 
 export const PaymentsDashboard: React.FC = () => {
-  const { data, isLoading, error } = usePaymentsDashboard('usd');
+  const [period, setPeriod] = React.useState<StatsPeriod>('month');
+  const { data, isLoading, error } = usePaymentsDashboard(period, 'usd');
 
   if (isLoading) return <div>Загрузка...</div>;
   if (error) return <div>Ошибка загрузки данных</div>;
   if (!data) return null;
 
+  // Получаем тренд из comparison, если он есть
+  const revenueTrend = data.comparison?.changes.revenue;
+
   return (
     <div className="space-y-6">
+      {/* Выбор периода */}
+      <div className="flex justify-end">
+        <Select
+          value={period}
+          onValueChange={(v) => setPeriod(v as StatsPeriod)}
+        >
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="day">День</SelectItem>
+            <SelectItem value="week">Неделя</SelectItem>
+            <SelectItem value="month">Месяц</SelectItem>
+            <SelectItem value="quarter">Квартал</SelectItem>
+            <SelectItem value="year">Год</SelectItem>
+            <SelectItem value="all">Всё время</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Основные метрики */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Выручка (месяц)"
+          title="Выручка"
           value={data.summary.totalRevenueFormatted}
           subtitle={`${data.summary.totalPayments} платежей`}
           icon={<DollarSign className="h-4 w-4 text-muted-foreground" />}
+          trend={revenueTrend}
         />
         <StatCard
           title="MRR"
@@ -1114,6 +1220,101 @@ export const PaymentsDashboard: React.FC = () => {
           icon={<CreditCard className="h-4 w-4 text-muted-foreground" />}
         />
       </div>
+
+      {/* Сравнение с предыдущим периодом */}
+      {data.comparison && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Сравнение с предыдущим периодом</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <div className="text-sm text-muted-foreground">Выручка</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold">
+                    {data.summary.totalRevenueFormatted}
+                  </span>
+                  <span
+                    className={`text-sm ${
+                      data.comparison.changes.revenue.direction === 'up'
+                        ? 'text-green-600'
+                        : data.comparison.changes.revenue.direction === 'down'
+                          ? 'text-red-600'
+                          : 'text-gray-500'
+                    }`}
+                  >
+                    {data.comparison.changes.revenue.percent > 0 ? '+' : ''}
+                    {data.comparison.changes.revenue.percent}%
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Было: {data.comparison.previous.totalRevenueFormatted}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Платежи</div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold">
+                    {data.summary.totalPayments}
+                  </span>
+                  <span
+                    className={`text-sm ${
+                      data.comparison.changes.payments.direction === 'up'
+                        ? 'text-green-600'
+                        : data.comparison.changes.payments.direction === 'down'
+                          ? 'text-red-600'
+                          : 'text-gray-500'
+                    }`}
+                  >
+                    {data.comparison.changes.payments.percent > 0 ? '+' : ''}
+                    {data.comparison.changes.payments.percent}%
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Было: {data.comparison.previous.totalPayments}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Топ плательщики */}
+      {data.topPayers && data.topPayers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Топ плательщики</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {data.topPayers.map((payer, index) => (
+                <div key={payer.telegramId} className="flex items-center gap-3">
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium">
+                      {payer.firstName} {payer.lastName}
+                      {payer.username && (
+                        <span className="text-muted-foreground ml-1">
+                          @{payer.username}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {payer.paymentsCount} платежей
+                    </div>
+                  </div>
+                  <div className="font-bold">
+                    ${payer.totalSpent.toFixed(2)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Подписки */}
       <Card>
@@ -1192,14 +1393,13 @@ export const PaymentsDashboard: React.FC = () => {
   );
 };
 
-// Утилита форматирования
+// Утилита форматирования (суммы уже в базовых единицах валюты, не в центах)
 function formatAmount(amount: number, currency: string = 'usd'): string {
-  const value = amount / 100;
   const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency.toUpperCase(),
   });
-  return formatter.format(value);
+  return formatter.format(amount);
 }
 ```
 
@@ -1241,8 +1441,8 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({
     if (!data) return [];
     return data.map((point) => ({
       ...point,
-      // Конвертируем центы в доллары для отображения
-      revenue: point.value / 100,
+      // Значения уже в базовых единицах валюты (доллары, не центы)
+      revenue: point.value,
     }));
   }, [data]);
 
@@ -1419,7 +1619,7 @@ export const AccountingReport: React.FC = () => {
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-2xl font-bold">
-                    ${(report.revenue.total / 100).toFixed(2)}
+                    ${report.revenue.total.toFixed(2)}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     Общая выручка
@@ -1447,7 +1647,7 @@ export const AccountingReport: React.FC = () => {
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-2xl font-bold">
-                    ${(report.avgCheck / 100).toFixed(2)}
+                    ${report.avgCheck.toFixed(2)}
                   </div>
                   <div className="text-sm text-muted-foreground">
                     Средний чек
@@ -1471,7 +1671,7 @@ export const AccountingReport: React.FC = () => {
                             {type.replace('_', ' ')}
                           </span>
                           <span className="font-medium">
-                            ${(amount / 100).toFixed(2)}
+                            ${(amount as number).toFixed(2)}
                           </span>
                         </div>
                       ),
@@ -1545,7 +1745,7 @@ export const AccountingReport: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <div className="font-bold">
-                          ${(payer.totalSpent / 100).toFixed(2)}
+                          ${payer.totalSpent.toFixed(2)}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Последний:{' '}
@@ -1583,7 +1783,7 @@ function convertToCSV(transactions: ExportTransaction[]): string {
     t.date,
     t.type,
     t.status,
-    (t.amount / 100).toFixed(2),
+    t.amount.toFixed(2), // Суммы уже в базовых единицах
     t.currency,
     t.user?.name || '',
     t.user?.telegramId || '',
@@ -1600,6 +1800,90 @@ function downloadCSV(csv: string, filename: string) {
   link.click();
 }
 ```
+
+---
+
+### Debug Endpoint
+
+#### GET `/api/admin/payments/debug`
+
+Отладочный эндпоинт для проверки данных в базе данных. Возвращает сырые данные без фильтров по периоду.
+
+**Пример ответа:**
+
+```json
+{
+  "message": "Debug info - all time data without filters",
+  "serverTime": "2026-01-28T12:00:00.000Z",
+  "allTimeSummary": {
+    "totalPayments": 250,
+    "totalRevenue": 25000,
+    "totalRevenueFormatted": "$25,000.00",
+    "avgPayment": 100,
+    "avgPaymentFormatted": "$100.00",
+    "currency": "usd"
+  },
+  "subscriptionStats": {
+    "activeSubscriptions": 234,
+    "cancelledSubscriptions": 12,
+    "expiredSubscriptions": 89,
+    "trialUsers": 45,
+    "conversionRate": 23.5,
+    "churnRate": 4.88
+  },
+  "breakdown": {
+    "byType": [{ "type": "subscription", "count": 200, "revenue": 20000 }],
+    "byCurrency": [{ "currency": "USD", "count": 250, "revenue": 25000 }]
+  },
+  "rawData": {
+    "totalDocuments": 250,
+    "dateRange": {
+      "oldest": "2025-10-01T00:00:00.000Z",
+      "newest": "2025-12-31T23:59:59.000Z"
+    },
+    "uniqueValues": {
+      "statuses": ["completed", "pending", "failed"],
+      "currencies": ["USD", "EUR"],
+      "recordTypes": ["subscription", "subscription_renewal"]
+    },
+    "availableFields": [
+      "_id",
+      "amount",
+      "currency",
+      "status",
+      "createdAt",
+      "periodStart",
+      "periodEnd",
+      "userId",
+      "tributeSubscriptionId"
+    ],
+    "countByStatus": [
+      { "_id": "completed", "count": 240 },
+      { "_id": "failed", "count": 10 }
+    ],
+    "sumByCurrency": [{ "_id": "USD", "total": 25000, "count": 250 }],
+    "recentPayments": [
+      {
+        "_id": "507f1f77bcf86cd799439011",
+        "amount": 29.99,
+        "currency": "USD",
+        "status": "completed",
+        "recordType": "subscription",
+        "createdAt": "2025-12-15T10:30:00.000Z",
+        "periodStart": "2025-12-15T00:00:00.000Z",
+        "periodEnd": "2026-01-15T00:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+> **Примечание:** Этот эндпоинт полезен для отладки, когда dashboard показывает нулевые значения. Он показывает:
+>
+> - Реальный диапазон дат в данных (`dateRange`)
+> - Какие поля присутствуют в коллекции (`availableFields`)
+> - Уникальные значения статусов, валют, типов (`uniqueValues`)
+> - Последние 10 записей в сыром виде (`recentPayments`)
 
 ---
 

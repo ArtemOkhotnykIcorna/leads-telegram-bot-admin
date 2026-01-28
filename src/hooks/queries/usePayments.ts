@@ -4,11 +4,14 @@ import type { StatsPeriod, Currency } from "@/types";
 
 const QUERY_KEY = ["payments"];
 
-// Получить все данные дашборда
-export function usePaymentsDashboard(currency: Currency = "usd") {
+// Получить все данные дашборда (включая topPayers и comparison)
+export function usePaymentsDashboard(
+  period: StatsPeriod = "month",
+  currency: Currency = "usd",
+) {
   return useQuery({
-    queryKey: [...QUERY_KEY, "dashboard", currency],
-    queryFn: () => paymentsApi.getDashboard(currency),
+    queryKey: [...QUERY_KEY, "dashboard", period, currency],
+    queryFn: () => paymentsApi.getDashboard(period, currency),
     staleTime: 60 * 1000, // 1 минута
   });
 }

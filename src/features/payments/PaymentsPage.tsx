@@ -10,33 +10,24 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/layout";
 import { Card, Button, Badge, Spinner, Select } from "@/components/ui";
-import {
-  usePaymentsDashboard,
-  usePeriodComparison,
-  useTopPayers,
-} from "@/hooks/queries/usePayments";
+import { QueryError } from "@/components/shared";
+import { usePaymentsDashboard } from "@/hooks/queries/usePayments";
 import { formatDateTime } from "@/lib/formatters";
 import type {
   StatsPeriod,
-  Currency,
   ChangeDirection,
   PaymentRecordType,
+  TopPayer,
 } from "@/types";
 
-// Конфиг периодов
+// Конфиг периодов (добавлен "all")
 const periodOptions: { value: StatsPeriod; label: string }[] = [
   { value: "day", label: "День" },
   { value: "week", label: "Неделя" },
   { value: "month", label: "Месяц" },
   { value: "quarter", label: "Квартал" },
   { value: "year", label: "Год" },
-];
-
-// Конфиг валют
-const currencyOptions: { value: Currency; label: string }[] = [
-  { value: "usd", label: "USD ($)" },
-  { value: "eur", label: "EUR (€)" },
-  { value: "rub", label: "RUB (₽)" },
+  { value: "all", label: "Всё время" },
 ];
 
 // Лейблы типов платежей
@@ -96,22 +87,8 @@ function MetricCard({
   );
 }
 
-// Компонент топ плательщика
-function TopPayerRow({
-  payer,
-  rank,
-}: {
-  payer: {
-    telegramId: number;
-    username?: string;
-    firstName?: string;
-    lastName?: string;
-    totalSpent: number;
-    paymentsCount: number;
-    lastPayment: string;
-  };
-  rank: number;
-}) {
+// Компонент топ плательщика (суммы уже в базовых единицах валюты, не в центах)
+function TopPayerRow({ payer, rank }: { payer: TopPayer; rank: number }) {
   const fullName =
     [payer.firstName, payer.lastName].filter(Boolean).join(" ") || "Без имени";
 
@@ -133,7 +110,7 @@ function TopPayerRow({
       </div>
       <div className="text-right">
         <div className="font-bold text-green-600">
-          ${(payer.totalSpent / 100).toFixed(2)}
+          ${payer.totalSpent.toFixed(2)}
         </div>
         <div className="text-xs text-gray-500">
           {formatDateTime(payer.lastPayment).split(",")[0]}
@@ -144,22 +121,40 @@ function TopPayerRow({
 }
 
 export function PaymentsPage() {
-  const [currency, setCurrency] = useState<Currency>("usd");
   const [period, setPeriod] = useState<StatsPeriod>("month");
 
+  // Dashboard теперь включает topPayers и comparison
   const {
     data: dashboard,
     isLoading,
+    isError,
+    error,
     refetch,
-  } = usePaymentsDashboard(currency);
-  const { data: comparison } = usePeriodComparison(period, currency);
-  const { data: topPayers } = useTopPayers(5, period);
+  } = usePaymentsDashboard(period, "usd");
+
+  // Извлекаем comparison из dashboard (null для period=all)
+  const comparison = dashboard?.comparison;
+  // Извлекаем topPayers из dashboard
+  const topPayers = dashboard?.topPayers;
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Spinner size="lg" />
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <QueryError
+        message={
+          error instanceof Error
+            ? error.message
+            : "Ошибка загрузки данных платежей"
+        }
+        onRetry={() => refetch()}
+      />
     );
   }
 
@@ -174,11 +169,6 @@ export function PaymentsPage() {
               options={periodOptions}
               value={period}
               onChange={(e) => setPeriod(e.target.value as StatsPeriod)}
-            />
-            <Select
-              options={currencyOptions}
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value as Currency)}
             />
             <Button
               variant="secondary"
@@ -332,7 +322,7 @@ export function PaymentsPage() {
                   </span>
                   <div className="text-right">
                     <span className="font-medium">
-                      ${(item.revenue / 100).toFixed(2)}
+                      ${item.revenue.toFixed(2)}
                     </span>
                     <span className="text-gray-400 text-sm ml-2">
                       ({item.count})
@@ -384,10 +374,10 @@ export function PaymentsPage() {
             <div>
               <div className="text-sm text-gray-500 mb-2">Текущий период</div>
               <div className="text-2xl font-bold">
-                {comparison.current.totalRevenueFormatted}
+                {dashboard?.summary.totalRevenueFormatted}
               </div>
               <div className="text-sm text-gray-500">
-                {comparison.current.totalPayments} платежей
+                {dashboard?.summary.totalPayments} платежей
               </div>
             </div>
             <div>
