@@ -11,3 +11,4 @@ export { paymentsApi } from "./payments.api";
 export { subscriptionPlansApi } from "./subscription-plans.api";
 export { analyticsApi } from "./analytics.api";
 export { usersApi } from "./users.api";
+export { botMessagesApi } from "./bot-messages.api";

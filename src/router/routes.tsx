@@ -16,6 +16,7 @@ import { PaymentsPage } from "@/features/payments";
 import { PlansPage } from "@/features/subscription-plans";
 import { AnalyticsPage } from "@/features/analytics";
 import { UsersPage } from "@/features/users";
+import { BotMessagesPage } from "@/features/bot-messages";
 import { NotFoundPage, ForbiddenPage } from "@/features/errors";
 
 export const router = createBrowserRouter([
@@ -146,6 +147,16 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute permission="viewAnalytics">
             <AnalyticsPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Bot Messages
+      {
+        path: "bot-messages",
+        element: (
+          <ProtectedRoute permission="viewAnalytics">
+            <BotMessagesPage />
           </ProtectedRoute>
         ),
       },

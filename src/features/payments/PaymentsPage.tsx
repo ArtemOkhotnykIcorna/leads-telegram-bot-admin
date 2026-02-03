@@ -110,7 +110,7 @@ function TopPayerRow({ payer, rank }: { payer: TopPayer; rank: number }) {
       </div>
       <div className="text-right">
         <div className="font-bold text-green-600">
-          ${payer.totalSpent.toFixed(2)}
+          €{payer.totalSpent.toFixed(2)}
         </div>
         <div className="text-xs text-gray-500">
           {formatDateTime(payer.lastPayment).split(",")[0]}
@@ -130,7 +130,7 @@ export function PaymentsPage() {
     isError,
     error,
     refetch,
-  } = usePaymentsDashboard(period, "usd");
+  } = usePaymentsDashboard(period, "eur");
 
   // Извлекаем comparison из dashboard (null для period=all)
   const comparison = dashboard?.comparison;
@@ -185,7 +185,7 @@ export function PaymentsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Выручка"
-          value={dashboard?.summary.totalRevenueFormatted || "$0"}
+          value={dashboard?.summary.totalRevenueFormatted || "€0"}
           subtitle={`${dashboard?.summary.totalPayments || 0} платежей`}
           icon={<DollarSign size={20} />}
           trend={
@@ -199,8 +199,8 @@ export function PaymentsPage() {
         />
         <MetricCard
           title="MRR"
-          value={dashboard?.mrr.currentMRRFormatted || "$0"}
-          subtitle={`ARR: ${dashboard?.mrr.projectedARRFormatted || "$0"}`}
+          value={dashboard?.mrr.currentMRRFormatted || "€0"}
+          subtitle={`ARR: ${dashboard?.mrr.projectedARRFormatted || "€0"}`}
           icon={<TrendingUp size={20} />}
           trend={
             dashboard?.mrr.growth !== undefined
@@ -225,7 +225,7 @@ export function PaymentsPage() {
         />
         <MetricCard
           title="Средний чек"
-          value={dashboard?.summary.avgPaymentFormatted || "$0"}
+          value={dashboard?.summary.avgPaymentFormatted || "€0"}
           icon={<CreditCard size={20} />}
         />
       </div>
@@ -301,68 +301,38 @@ export function PaymentsPage() {
         </Card>
       </div>
 
-      {/* Разбивки */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* По типам платежей */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            По типам платежей
-          </h3>
-          {dashboard?.breakdown.byType &&
-          dashboard.breakdown.byType.length > 0 ? (
-            <div className="space-y-3">
-              {dashboard.breakdown.byType.map((item) => (
-                <div
-                  key={item.type}
-                  className="flex justify-between items-center"
-                >
-                  <span className="text-gray-600">
-                    {paymentTypeLabels[item.type as PaymentRecordType] ||
-                      item.type}
+      {/* Разбивка по типам платежей */}
+      <Card className="p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          По типам платежей
+        </h3>
+        {dashboard?.breakdown.byType &&
+        dashboard.breakdown.byType.length > 0 ? (
+          <div className="space-y-3">
+            {dashboard.breakdown.byType.map((item) => (
+              <div
+                key={item.type}
+                className="flex justify-between items-center"
+              >
+                <span className="text-gray-600">
+                  {paymentTypeLabels[item.type as PaymentRecordType] ||
+                    item.type}
+                </span>
+                <div className="text-right">
+                  <span className="font-medium">
+                    €{item.revenue.toFixed(2)}
                   </span>
-                  <div className="text-right">
-                    <span className="font-medium">
-                      ${item.revenue.toFixed(2)}
-                    </span>
-                    <span className="text-gray-400 text-sm ml-2">
-                      ({item.count})
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center text-gray-500 py-8">Нет данных</div>
-          )}
-        </Card>
-
-        {/* По валютам */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            По валютам
-          </h3>
-          {dashboard?.breakdown.byCurrency &&
-          dashboard.breakdown.byCurrency.length > 0 ? (
-            <div className="space-y-3">
-              {dashboard.breakdown.byCurrency.map((item) => (
-                <div
-                  key={item.currency}
-                  className="flex justify-between items-center"
-                >
-                  <span className="text-gray-600 uppercase">
-                    {item.currency}
+                  <span className="text-gray-400 text-sm ml-2">
+                    ({item.count})
                   </span>
-                  <div className="text-right">
-                    <span className="font-medium">{item.count} платежей</span>
-                  </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center text-gray-500 py-8">Нет данных</div>
-          )}
-        </Card>
-      </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-gray-500 py-8">Нет данных</div>
+        )}
+      </Card>
 
       {/* Сравнение периодов */}
       {comparison && (

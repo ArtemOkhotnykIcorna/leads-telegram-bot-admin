@@ -39,6 +39,9 @@ export * from "./analytics.types";
 // User types
 export * from "./user.types";
 
+// Bot Message types
+export * from "./bot-message.types";
+
 // Common types
 export interface PaginationParams {
   page?: number;

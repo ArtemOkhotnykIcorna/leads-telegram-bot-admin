@@ -95,6 +95,12 @@ const navItems: NavItem[] = [
     permission: "viewAnalytics",
   },
   {
+    label: "Сообщения бота",
+    href: "/bot-messages",
+    icon: <MessageSquare size={20} />,
+    permission: "viewAnalytics",
+  },
+  {
     label: "Аналитика",
     href: "/analytics",
     icon: <BarChart3 size={20} />,

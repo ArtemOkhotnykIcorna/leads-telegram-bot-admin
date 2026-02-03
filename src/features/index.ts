@@ -50,6 +50,10 @@ export { UserForm } from "./users/UserForm";
 export { ActivateSubscriptionModal } from "./users/ActivateSubscriptionModal";
 export { UserDetailsModal } from "./users/UserDetailsModal";
 
+// Bot Messages
+export { BotMessagesPage } from "./bot-messages/BotMessagesPage";
+export { BotMessageEditor } from "./bot-messages/BotMessageEditor";
+
 // Errors
 export { NotFoundPage } from "./errors/NotFoundPage";
 export { ForbiddenPage } from "./errors/ForbiddenPage";

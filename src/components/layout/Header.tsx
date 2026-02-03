@@ -1,4 +1,4 @@
-import { Menu, LogOut, User, Settings } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { Menu as HeadlessMenu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -67,35 +67,7 @@ export function Header() {
                 </p>
               </div>
 
-              <HeadlessMenu.Item>
-                {({ active }) => (
-                  <button
-                    className={cn(
-                      "w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700",
-                      active && "bg-gray-50",
-                    )}
-                  >
-                    <User size={16} />
-                    Профиль
-                  </button>
-                )}
-              </HeadlessMenu.Item>
-
-              <HeadlessMenu.Item>
-                {({ active }) => (
-                  <button
-                    className={cn(
-                      "w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700",
-                      active && "bg-gray-50",
-                    )}
-                  >
-                    <Settings size={16} />
-                    Настройки
-                  </button>
-                )}
-              </HeadlessMenu.Item>
-
-              <div className="border-t border-gray-100 mt-1 pt-1">
+              <div className="pt-1">
                 <HeadlessMenu.Item>
                   {({ active }) => (
                     <button
