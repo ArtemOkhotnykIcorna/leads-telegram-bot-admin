@@ -7,7 +7,7 @@ export type PlanPeriodType =
   | "lifetime";
 
 // Поддерживаемые валюты для планов
-export type PlanCurrency = "usd";
+export type PlanCurrency = "usd" | "eur" | "rub";
 
 // Тарифный план подписки
 export interface SubscriptionPlan {
