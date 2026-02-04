@@ -81,7 +81,7 @@ function StatsCard({
   isActive,
 }: {
   title: string;
-  value: number;
+  value: number | undefined;
   color: string;
   onClick?: () => void;
   isActive?: boolean;
@@ -96,7 +96,7 @@ function StatsCard({
       }`}
     >
       <div className={`text-2xl font-bold ${color}`}>
-        {value.toLocaleString()}
+        {(value ?? 0).toLocaleString()}
       </div>
       <div className="text-sm text-gray-600">{title}</div>
     </button>

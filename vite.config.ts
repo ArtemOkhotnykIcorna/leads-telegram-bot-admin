@@ -19,4 +19,23 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React и связанные библиотеки
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          // UI библиотеки
+          "ui-vendor": ["react-hot-toast", "react-hook-form"],
+          // Данные и запросы
+          "data-vendor": ["@tanstack/react-query", "axios"],
+          // Графики и аналитика
+          "charts-vendor": ["recharts"],
+          // Утилиты
+          "utils-vendor": ["zustand", "clsx", "date-fns"],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
 });

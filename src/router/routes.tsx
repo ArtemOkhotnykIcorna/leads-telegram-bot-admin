@@ -1,23 +1,65 @@
 import { createBrowserRouter } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { MainLayout } from "@/components/layout";
 import { AuthGuard, LoginPage } from "@/features/auth";
 import { ProtectedRoute } from "./ProtectedRoute";
+import { PageLoader } from "@/components/shared";
 
 // Pages - lazy load
-import { DashboardPage } from "@/features/dashboard";
-import { AdminsPage } from "@/features/admins";
-import { CountriesPage } from "@/features/countries";
-import { DirectionsPage } from "@/features/directions";
-import { GroupsPage } from "@/features/groups";
-import { SourcesPage } from "@/features/sources";
-import { RoutingPage } from "@/features/routing";
-import { LeadsPage } from "@/features/leads";
-import { PaymentsPage } from "@/features/payments";
-import { PlansPage } from "@/features/subscription-plans";
-import { AnalyticsPage } from "@/features/analytics";
-import { UsersPage } from "@/features/users";
-import { BotMessagesPage } from "@/features/bot-messages";
-import { NotFoundPage, ForbiddenPage } from "@/features/errors";
+const DashboardPage = lazy(() =>
+  import("@/features/dashboard").then((m) => ({ default: m.DashboardPage })),
+);
+const AdminsPage = lazy(() =>
+  import("@/features/admins").then((m) => ({ default: m.AdminsPage })),
+);
+const CountriesPage = lazy(() =>
+  import("@/features/countries").then((m) => ({ default: m.CountriesPage })),
+);
+const DirectionsPage = lazy(() =>
+  import("@/features/directions").then((m) => ({ default: m.DirectionsPage })),
+);
+const GroupsPage = lazy(() =>
+  import("@/features/groups").then((m) => ({ default: m.GroupsPage })),
+);
+const SourcesPage = lazy(() =>
+  import("@/features/sources").then((m) => ({ default: m.SourcesPage })),
+);
+const RoutingPage = lazy(() =>
+  import("@/features/routing").then((m) => ({ default: m.RoutingPage })),
+);
+const LeadsPage = lazy(() =>
+  import("@/features/leads").then((m) => ({ default: m.LeadsPage })),
+);
+const PaymentsPage = lazy(() =>
+  import("@/features/payments").then((m) => ({ default: m.PaymentsPage })),
+);
+const PlansPage = lazy(() =>
+  import("@/features/subscription-plans").then((m) => ({
+    default: m.PlansPage,
+  })),
+);
+const AnalyticsPage = lazy(() =>
+  import("@/features/analytics").then((m) => ({ default: m.AnalyticsPage })),
+);
+const UsersPage = lazy(() =>
+  import("@/features/users").then((m) => ({ default: m.UsersPage })),
+);
+const BotMessagesPage = lazy(() =>
+  import("@/features/bot-messages").then((m) => ({
+    default: m.BotMessagesPage,
+  })),
+);
+const NotFoundPage = lazy(() =>
+  import("@/features/errors").then((m) => ({ default: m.NotFoundPage })),
+);
+const ForbiddenPage = lazy(() =>
+  import("@/features/errors").then((m) => ({ default: m.ForbiddenPage })),
+);
+
+// Wrapper для Suspense
+const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={<PageLoader />}>{children}</Suspense>
+);
 
 export const router = createBrowserRouter([
   // Public routes
@@ -38,16 +80,22 @@ export const router = createBrowserRouter([
       // Dashboard
       {
         index: true,
-        element: <DashboardPage />,
+        element: (
+          <SuspenseWrapper>
+            <DashboardPage />
+          </SuspenseWrapper>
+        ),
       },
 
       // Admins (только для admin роли)
       {
         path: "admins",
         element: (
-          <ProtectedRoute permission="manageAdmins">
-            <AdminsPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="manageAdmins">
+              <AdminsPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
@@ -55,9 +103,11 @@ export const router = createBrowserRouter([
       {
         path: "countries",
         element: (
-          <ProtectedRoute permission="manageCountries">
-            <CountriesPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="manageCountries">
+              <CountriesPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
@@ -65,9 +115,11 @@ export const router = createBrowserRouter([
       {
         path: "directions",
         element: (
-          <ProtectedRoute permission="manageDirections">
-            <DirectionsPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="manageDirections">
+              <DirectionsPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
@@ -75,9 +127,11 @@ export const router = createBrowserRouter([
       {
         path: "groups",
         element: (
-          <ProtectedRoute permission="manageGroups">
-            <GroupsPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="manageGroups">
+              <GroupsPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
@@ -85,9 +139,11 @@ export const router = createBrowserRouter([
       {
         path: "sources",
         element: (
-          <ProtectedRoute permission="manageSources">
-            <SourcesPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="manageSources">
+              <SourcesPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
@@ -95,9 +151,11 @@ export const router = createBrowserRouter([
       {
         path: "routing",
         element: (
-          <ProtectedRoute permission="manageRouting">
-            <RoutingPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="manageRouting">
+              <RoutingPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
@@ -105,9 +163,11 @@ export const router = createBrowserRouter([
       {
         path: "leads",
         element: (
-          <ProtectedRoute permission="manageSources">
-            <LeadsPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="manageSources">
+              <LeadsPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
@@ -115,9 +175,11 @@ export const router = createBrowserRouter([
       {
         path: "users",
         element: (
-          <ProtectedRoute permission="viewAnalytics">
-            <UsersPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="viewAnalytics">
+              <UsersPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
@@ -125,9 +187,11 @@ export const router = createBrowserRouter([
       {
         path: "payments",
         element: (
-          <ProtectedRoute permission="viewAnalytics">
-            <PaymentsPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="viewAnalytics">
+              <PaymentsPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
@@ -135,9 +199,11 @@ export const router = createBrowserRouter([
       {
         path: "plans",
         element: (
-          <ProtectedRoute permission="viewAnalytics">
-            <PlansPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="viewAnalytics">
+              <PlansPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
@@ -145,9 +211,11 @@ export const router = createBrowserRouter([
       {
         path: "analytics",
         element: (
-          <ProtectedRoute permission="viewAnalytics">
-            <AnalyticsPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="viewAnalytics">
+              <AnalyticsPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
@@ -155,20 +223,30 @@ export const router = createBrowserRouter([
       {
         path: "bot-messages",
         element: (
-          <ProtectedRoute permission="viewAnalytics">
-            <BotMessagesPage />
-          </ProtectedRoute>
+          <SuspenseWrapper>
+            <ProtectedRoute permission="viewAnalytics">
+              <BotMessagesPage />
+            </ProtectedRoute>
+          </SuspenseWrapper>
         ),
       },
 
       // Error pages
       {
         path: "403",
-        element: <ForbiddenPage />,
+        element: (
+          <SuspenseWrapper>
+            <ForbiddenPage />
+          </SuspenseWrapper>
+        ),
       },
       {
         path: "*",
-        element: <NotFoundPage />,
+        element: (
+          <SuspenseWrapper>
+            <NotFoundPage />
+          </SuspenseWrapper>
+        ),
       },
     ],
   },
