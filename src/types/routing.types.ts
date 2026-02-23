@@ -1,3 +1,5 @@
+export type DistributionMode = "all" | "round_robin";
+
 export interface RoutingConditions {
   countries?: string[];
   directions?: string[];
@@ -8,65 +10,33 @@ export interface RoutingRule {
   _id: string;
   name: string;
   description?: string;
-  sourceId?: string;
-  countryId?: string;
-  directionId?: string;
-  groupId?: string;
-  targetGroups?: string[];
+  conditions: RoutingConditions;
+  targetGroupIds: string[];
+  distributionMode: DistributionMode;
+  roundRobinIndex: number;
   priority: number;
-  conditions?: RoutingConditions;
   isActive: boolean;
+  leadsRouted: number;
   createdAt: string;
   updatedAt: string;
-
-  // Populated fields
-  source?: {
-    _id: string;
-    name: string;
-  };
-  country?: {
-    _id: string;
-    name: string;
-    code: string;
-  };
-  direction?: {
-    _id: string;
-    name: string;
-  };
-  group?: {
-    _id: string;
-    name: string;
-  };
-}
-
-export interface RoutingCondition {
-  field: string;
-  operator: "equals" | "contains" | "startsWith" | "endsWith" | "regex";
-  value: string;
 }
 
 export interface CreateRoutingDto {
   name: string;
   description?: string;
-  sourceId?: string;
-  countryId?: string;
-  directionId?: string;
-  groupId?: string;
-  targetGroups?: string[];
-  priority?: number;
   conditions?: RoutingConditions;
+  targetGroupIds: string[];
+  distributionMode?: DistributionMode;
+  priority?: number;
   isActive?: boolean;
 }
 
 export interface UpdateRoutingDto {
   name?: string;
   description?: string;
-  sourceId?: string;
-  countryId?: string;
-  directionId?: string;
-  groupId?: string;
-  targetGroups?: string[];
-  priority?: number;
   conditions?: RoutingConditions;
+  targetGroupIds?: string[];
+  distributionMode?: DistributionMode;
+  priority?: number;
   isActive?: boolean;
 }

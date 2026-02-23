@@ -113,28 +113,45 @@ export function RoutingPage() {
       },
     },
     {
-      accessorKey: "targetGroups",
+      accessorKey: "targetGroupIds",
       header: "Группы",
       cell: ({ row }) => {
-        const raw = row.original.targetGroups || [];
-        if (raw.length === 0) return <span className="text-gray-400">—</span>;
-
-        // targetGroups могут быть строками (ID) или populated-объектами
-        const names = raw.map((g: string | { _id: string; name: string }) => {
-          if (typeof g === "object") return g.name;
-          return allGroups?.find((ag) => ag._id === g)?.name ?? g;
-        });
-
+        const ids = row.original.targetGroupIds || [];
+        if (ids.length === 0) return <span className="text-gray-400">—</span>;
         return (
           <div className="flex flex-wrap gap-1">
-            {names.map((name, i) => (
-              <Badge key={i} variant="default" size="sm">
-                {name}
-              </Badge>
-            ))}
+            {ids.map((id) => {
+              const name = allGroups?.find((g) => g._id === id)?.name ?? id;
+              return (
+                <Badge key={id} variant="default" size="sm">
+                  {name}
+                </Badge>
+              );
+            })}
           </div>
         );
       },
+    },
+    {
+      accessorKey: "distributionMode",
+      header: "Режим",
+      cell: ({ row }) => (
+        <Badge
+          variant={row.original.distributionMode === "round_robin" ? "info" : "default"}
+          size="sm"
+        >
+          {row.original.distributionMode === "round_robin" ? "round_robin" : "all"}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "leadsRouted",
+      header: "Лидов",
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">
+          {row.original.leadsRouted ?? 0}
+        </span>
+      ),
     },
     {
       accessorKey: "isActive",

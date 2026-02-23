@@ -17,12 +17,13 @@ const routingSchema = z.object({
   name: z.string().min(1, "Обязательное поле"),
   description: z.string().optional(),
   priority: z.coerce.number().min(1).default(100),
+  distributionMode: z.enum(["all", "round_robin"]).default("all"),
   conditions: z.object({
     countries: z.array(z.string()).default([]),
     directions: z.array(z.string()).default([]),
     sources: z.array(z.string()).default([]),
   }),
-  targetGroups: z.array(z.string()).min(1, "Выберите хотя бы одну группу"),
+  targetGroupIds: z.array(z.string()).min(1, "Выберите хотя бы одну группу"),
   isActive: z.boolean().default(true),
 });
 
@@ -57,12 +58,13 @@ export function RoutingForm({ ruleId, onSuccess }: RoutingFormProps) {
       name: "",
       description: "",
       priority: 100,
+      distributionMode: "all",
       conditions: {
         countries: [],
         directions: [],
         sources: [],
       },
-      targetGroups: [],
+      targetGroupIds: [],
       isActive: true,
     },
   });
@@ -78,13 +80,13 @@ export function RoutingForm({ ruleId, onSuccess }: RoutingFormProps) {
         name: rule.name,
         description: rule.description || "",
         priority: rule.priority,
+        distributionMode: rule.distributionMode ?? "all",
         conditions: {
           countries: (conditions.countries || []).map(toId),
           directions: (conditions.directions || []).map(toId),
           sources: (conditions.sources || []).map(toId),
         },
-        // targetGroups может прийти как string[] или {_id,name}[]
-        targetGroups: (rule.targetGroups || []).map(toId),
+        targetGroupIds: (rule.targetGroupIds || []).map(toId),
         isActive: rule.isActive,
       });
     }
@@ -103,14 +105,14 @@ export function RoutingForm({ ruleId, onSuccess }: RoutingFormProps) {
   const selectedCountries = watch("conditions.countries");
   const selectedDirections = watch("conditions.directions");
   const selectedSources = watch("conditions.sources");
-  const selectedGroups = watch("targetGroups");
+  const selectedGroups = watch("targetGroupIds");
 
   const toggleArrayItem = (
     field:
       | "conditions.countries"
       | "conditions.directions"
       | "conditions.sources"
-      | "targetGroups",
+      | "targetGroupIds",
     value: string,
     current: string[],
   ) => {
@@ -142,6 +144,21 @@ export function RoutingForm({ ruleId, onSuccess }: RoutingFormProps) {
       </div>
 
       <Textarea label="Описание" {...register("description")} />
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Режим распределения
+          </label>
+          <select
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            {...register("distributionMode")}
+          >
+            <option value="all">Все группы (all)</option>
+            <option value="round_robin">По очереди (round_robin)</option>
+          </select>
+        </div>
+      </div>
 
       <div className="border-t pt-4">
         <h4 className="font-medium text-gray-900 mb-3">Условия (фильтры)</h4>
@@ -227,9 +244,9 @@ export function RoutingForm({ ruleId, onSuccess }: RoutingFormProps) {
 
       <div className="border-t pt-4">
         <h4 className="font-medium text-gray-900 mb-3">Целевые группы *</h4>
-        {errors.targetGroups && (
+        {errors.targetGroupIds && (
           <p className="text-sm text-red-500 mb-2">
-            {errors.targetGroups.message}
+            {errors.targetGroupIds.message}
           </p>
         )}
         <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border rounded">
@@ -241,7 +258,7 @@ export function RoutingForm({ ruleId, onSuccess }: RoutingFormProps) {
                 label={group.name}
                 checked={selectedGroups.includes(group._id)}
                 onChange={() =>
-                  toggleArrayItem("targetGroups", group._id, selectedGroups)
+                  toggleArrayItem("targetGroupIds", group._id, selectedGroups)
                 }
               />
             ))}
