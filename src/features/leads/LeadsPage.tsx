@@ -330,14 +330,6 @@ export function LeadsPage() {
             >
               Обновить
             </Button>
-            <Button
-              variant="primary"
-              onClick={() => retryFailedMutation.mutate()}
-              isLoading={retryFailedMutation.isPending}
-              leftIcon={<RefreshCw size={16} />}
-            >
-              Опубликовать Failed
-            </Button>
           </div>
         }
       />
