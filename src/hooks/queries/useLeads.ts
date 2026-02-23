@@ -53,5 +53,27 @@ export function useRetryLead() {
   });
 }
 
+// Запустить публикацию всех failed-лидов вручную
+export function useRetryFailedLeads() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => leadsApi.retryFailed(),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success(
+        data?.processed
+          ? `Запущена публикация ${data.processed} лидов`
+          : "Публикация запущена",
+      );
+    },
+    onError: (
+      error: Error & { response?: { data?: { message?: string } } },
+    ) => {
+      toast.error(error.response?.data?.message || "Ошибка запуска публикации");
+    },
+  });
+}
+
 // Alias для совместимости
 export const useResendLead = useRetryLead;

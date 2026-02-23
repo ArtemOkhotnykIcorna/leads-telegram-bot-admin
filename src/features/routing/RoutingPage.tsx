@@ -137,10 +137,14 @@ export function RoutingPage() {
       header: "Режим",
       cell: ({ row }) => (
         <Badge
-          variant={row.original.distributionMode === "round_robin" ? "info" : "default"}
+          variant={
+            row.original.distributionMode === "round_robin" ? "info" : "default"
+          }
           size="sm"
         >
-          {row.original.distributionMode === "round_robin" ? "round_robin" : "all"}
+          {row.original.distributionMode === "round_robin"
+            ? "round_robin"
+            : "all"}
         </Badge>
       ),
     },

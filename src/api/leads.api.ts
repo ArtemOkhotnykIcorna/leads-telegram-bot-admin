@@ -27,9 +27,17 @@ export const leadsApi = {
     return data;
   },
 
-  // Повторить публикацию
+  // Повторить публикацию одного лида
   retry: async (id: string): Promise<Lead> => {
     const { data } = await api.post<Lead>(`/admin/leads/${id}/retry`);
+    return data;
+  },
+
+  // Запустить публикацию всех failed-лидов вручную
+  retryFailed: async (): Promise<{ processed: number }> => {
+    const { data } = await api.post<{ processed: number }>(
+      "/admin/publisher/retry-failed",
+    );
     return data;
   },
 };

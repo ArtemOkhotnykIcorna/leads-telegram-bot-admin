@@ -16,7 +16,12 @@ import {
 import { PageHeader } from "@/components/layout";
 import { Button, Modal, Badge, Card, Select } from "@/components/ui";
 import { DataTable } from "@/components/shared";
-import { useLeads, useLeadStats, useRetryLead } from "@/hooks/queries/useLeads";
+import {
+  useLeads,
+  useLeadStats,
+  useRetryLead,
+  useRetryFailedLeads,
+} from "@/hooks/queries/useLeads";
 import { useSources } from "@/hooks/queries/useSources";
 import { useDirections } from "@/hooks/queries/useDirections";
 import { LeadDetails } from "./LeadDetails";
@@ -132,6 +137,7 @@ export function LeadsPage() {
   const { data: sources } = useSources();
   const { data: directions } = useDirections();
   const retryMutation = useRetryLead();
+  const retryFailedMutation = useRetryFailedLeads();
 
   // Обработчики
   const handleRetry = async (id: string) => {
@@ -323,6 +329,14 @@ export function LeadsPage() {
               leftIcon={<RefreshCw size={16} />}
             >
               Обновить
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => retryFailedMutation.mutate()}
+              isLoading={retryFailedMutation.isPending}
+              leftIcon={<RefreshCw size={16} />}
+            >
+              Опубликовать Failed
             </Button>
           </div>
         }
