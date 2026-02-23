@@ -15,6 +15,7 @@ import {
   useDeleteRoutingRule,
   useToggleRoutingRule,
 } from "@/hooks/queries/useRouting";
+import { useGroups } from "@/hooks/queries/useGroups";
 import { RoutingForm } from "./RoutingForm";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { RoutingRule } from "@/types";
@@ -25,6 +26,7 @@ export function RoutingPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: rules, isLoading } = useRoutingRules();
+  const { data: allGroups } = useGroups();
   const deleteMutation = useDeleteRoutingRule();
   const toggleMutation = useToggleRoutingRule();
 
@@ -113,11 +115,26 @@ export function RoutingPage() {
     {
       accessorKey: "targetGroups",
       header: "Группы",
-      cell: ({ row }) => (
-        <Badge variant="default">
-          {row.original.targetGroups?.length || 0} групп(ы)
-        </Badge>
-      ),
+      cell: ({ row }) => {
+        const raw = row.original.targetGroups || [];
+        if (raw.length === 0) return <span className="text-gray-400">—</span>;
+
+        // targetGroups могут быть строками (ID) или populated-объектами
+        const names = raw.map((g: string | { _id: string; name: string }) => {
+          if (typeof g === "object") return g.name;
+          return allGroups?.find((ag) => ag._id === g)?.name ?? g;
+        });
+
+        return (
+          <div className="flex flex-wrap gap-1">
+            {names.map((name, i) => (
+              <Badge key={i} variant="default" size="sm">
+                {name}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "isActive",

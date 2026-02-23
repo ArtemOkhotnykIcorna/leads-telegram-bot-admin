@@ -67,6 +67,10 @@ export function RoutingForm({ ruleId, onSuccess }: RoutingFormProps) {
     },
   });
 
+  // Нормализовать ID из populated-объекта или строки
+  const toId = (v: string | { _id: string }): string =>
+    typeof v === "object" ? v._id : v;
+
   useEffect(() => {
     if (rule && isEditing) {
       const conditions = rule.conditions || {};
@@ -75,11 +79,12 @@ export function RoutingForm({ ruleId, onSuccess }: RoutingFormProps) {
         description: rule.description || "",
         priority: rule.priority,
         conditions: {
-          countries: conditions.countries || [],
-          directions: conditions.directions || [],
-          sources: conditions.sources || [],
+          countries: (conditions.countries || []).map(toId),
+          directions: (conditions.directions || []).map(toId),
+          sources: (conditions.sources || []).map(toId),
         },
-        targetGroups: rule.targetGroups || [],
+        // targetGroups может прийти как string[] или {_id,name}[]
+        targetGroups: (rule.targetGroups || []).map(toId),
         isActive: rule.isActive,
       });
     }
