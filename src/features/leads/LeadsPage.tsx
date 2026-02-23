@@ -237,11 +237,17 @@ export function LeadsPage() {
       header: "Направление",
       cell: ({ row }) => {
         const direction = getPopulated(row.original.directionId);
-        return direction ? (
-          <Badge variant="info">{direction.name}</Badge>
-        ) : (
-          <span className="text-gray-400">—</span>
-        );
+        if (direction) return <Badge variant="info">{direction.name}</Badge>;
+
+        // Fallback: directionId пришёл как строка (ID без populate)
+        if (typeof row.original.directionId === "string" && directions) {
+          const found = directions.find(
+            (d) => d._id === row.original.directionId,
+          );
+          if (found) return <Badge variant="info">{found.name}</Badge>;
+        }
+
+        return <span className="text-gray-400">—</span>;
       },
     },
     {
