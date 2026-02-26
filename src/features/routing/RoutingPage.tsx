@@ -128,7 +128,7 @@ export function RoutingPage() {
                 ? (item as { _id: string })._id
                 : String(item);
               const name = isPopulated
-                ? (item as { name: string }).name
+                ? (item as unknown as { name: string }).name
                 : (allGroups?.find((g) => g._id === item)?.name ??
                   String(item));
               return (
