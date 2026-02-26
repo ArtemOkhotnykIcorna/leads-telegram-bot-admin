@@ -189,8 +189,9 @@ export function GroupsPage() {
       accessorKey: "stats",
       header: "Статистика",
       cell: ({ row }) => (
-        <div className="text-sm">
+        <div className="text-sm space-y-0.5">
           <div>Лидов: {row.original.stats?.leadsPublished || 0}</div>
+          <div>Инвайтов: {row.original.stats?.invitesGenerated || 0}</div>
           {row.original.stats?.lastPublishedAt && (
             <div className="text-xs text-gray-500">
               Последний: {formatDate(row.original.stats.lastPublishedAt)}
