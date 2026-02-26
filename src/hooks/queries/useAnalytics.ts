@@ -45,13 +45,12 @@ export function useAnalyticsStats(period: string) {
     queryKey: [...QUERY_KEY, "stats", period],
     queryFn: () => analyticsApi.getOverview({ period }),
     select: (data) => ({
-      totalLeads: data?.totalLeads || 0,
-      sentLeads: data?.sentLeads || 0,
-      failedLeads: data?.failedLeads || 0,
-      successRate: data?.successRate || 0,
-      conversionRate: data?.conversionRate || 0,
-      leadsGrowth: data?.leadsGrowth,
-      conversionGrowth: data?.conversionGrowth,
+      totalLeads: data?.leads?.total || 0,
+      totalUsers: data?.users?.total || 0,
+      activeSubscriptions: data?.users?.activeSubscriptions || 0,
+      freeUsers: data?.users?.freeUsers || 0,
+      totalPayments: data?.payments?.total || 0,
+      revenue: data?.payments?.revenue || 0,
     }),
   });
 }
