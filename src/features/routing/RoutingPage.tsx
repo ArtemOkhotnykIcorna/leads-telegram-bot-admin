@@ -120,10 +120,19 @@ export function RoutingPage() {
         if (ids.length === 0) return <span className="text-gray-400">—</span>;
         return (
           <div className="flex flex-wrap gap-1">
-            {ids.map((id) => {
-              const name = allGroups?.find((g) => g._id === id)?.name ?? id;
+            {ids.map((item: unknown) => {
+              // API may return populated group objects or plain string IDs
+              const isPopulated =
+                typeof item === "object" && item !== null && "_id" in item;
+              const key = isPopulated
+                ? (item as { _id: string })._id
+                : String(item);
+              const name = isPopulated
+                ? (item as { name: string }).name
+                : (allGroups?.find((g) => g._id === item)?.name ??
+                  String(item));
               return (
-                <Badge key={id} variant="default" size="sm">
+                <Badge key={key} variant="default" size="sm">
                   {name}
                 </Badge>
               );
