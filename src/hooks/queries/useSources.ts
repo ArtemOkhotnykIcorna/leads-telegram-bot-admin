@@ -4,6 +4,7 @@ import type {
   CreateSourceDto,
   UpdateSourceDto,
   LinkPendingSourceDto,
+  MtprotoJoinAndAddDto,
 } from "@/types";
 import toast from "react-hot-toast";
 
@@ -172,6 +173,41 @@ export function useRejectPendingSource() {
       error: Error & { response?: { data?: { message?: string } } },
     ) => {
       toast.error(error.response?.data?.message || "Ошибка отклонения");
+    },
+  });
+}
+
+// MTProto хуки
+export function useMtprotoStatus() {
+  return useQuery({
+    queryKey: [...QUERY_KEY, "mtproto-status"],
+    queryFn: sourcesApi.getMtprotoStatus,
+    refetchInterval: 60000, // Обновлять каждую минуту
+  });
+}
+
+export function useMtprotoJoinAndAdd() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (dto: MtprotoJoinAndAddDto) =>
+      sourcesApi.mtprotoJoinAndAdd(dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      toast.success("Источник добавлен");
+    },
+    onError: (
+      error: Error & {
+        response?: { status?: number; data?: { message?: string } };
+      },
+    ) => {
+      const status = error.response?.status;
+      const message = error.response?.data?.message;
+      if (status === 409) {
+        toast.error("Этот источник уже существует");
+      } else {
+        toast.error(message || "Ошибка подключения к группе");
+      }
     },
   });
 }

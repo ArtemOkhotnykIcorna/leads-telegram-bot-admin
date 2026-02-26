@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Plus,
   Pencil,
   Trash2,
   Copy,
@@ -12,6 +11,8 @@ import {
   Globe,
   Plug,
   Info,
+  Send,
+  FileSpreadsheet,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout";
 import {
@@ -36,10 +37,13 @@ import {
   usePendingSources,
   useRejectPendingSource,
   useParsingTemplates,
+  useMtprotoStatus,
 } from "@/hooks/queries/useSources";
 import { useDirections } from "@/hooks/queries/useDirections";
 import { SourceForm } from "./SourceForm";
 import { LinkPendingSourceForm } from "./LinkPendingSourceForm";
+import { JoinAndAddSourceForm } from "./JoinAndAddSourceForm";
+import { ExcelImportModal } from "./ExcelImportModal";
 import { copyToClipboard } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -55,8 +59,11 @@ export function SourcesPage() {
     null,
   );
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
 
   const { data: directions } = useDirections();
+  const { data: mtprotoStatus } = useMtprotoStatus();
   const { data: sources, isLoading } = useSources(directionFilter || undefined);
   const { data: pendingSources, isLoading: pendingLoading } =
     usePendingSources();
@@ -68,11 +75,6 @@ export function SourcesPage() {
 
   const pendingCount =
     pendingSources?.filter((s) => s.status === "pending").length || 0;
-
-  const handleCreate = () => {
-    setEditingId(null);
-    setIsFormOpen(true);
-  };
 
   const handleEdit = (id: string) => {
     setEditingId(id);
@@ -418,9 +420,28 @@ export function SourcesPage() {
         title="Источники"
         description="Управление источниками получения лидов (парсинг каналов/групп)"
         actions={
-          <Button onClick={handleCreate} leftIcon={<Plus size={16} />}>
-            Добавить источник
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsExcelModalOpen(true)}
+              leftIcon={<FileSpreadsheet size={16} />}
+            >
+              Импорт из Excel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => setIsJoinModalOpen(true)}
+              leftIcon={<Send size={16} />}
+              disabled={mtprotoStatus?.connected === false}
+              title={
+                mtprotoStatus?.connected === false
+                  ? "Сервис Telegram недоступен. Обратитесь к администратору"
+                  : "Добавить канал/группу через MTProto"
+              }
+            >
+              Добавить через Telegram
+            </Button>
+          </div>
         }
       />
 
@@ -469,10 +490,13 @@ export function SourcesPage() {
               emptyState={{
                 title: "Нет источников",
                 description:
-                  "Добавьте бота в канал/группу как участника или создайте источник вручную",
+                  "Добавьте канал/группу через Telegram или создайте источник вручную",
                 action: (
-                  <Button onClick={handleCreate} leftIcon={<Plus size={16} />}>
-                    Добавить
+                  <Button
+                    onClick={() => setIsJoinModalOpen(true)}
+                    leftIcon={<Send size={16} />}
+                  >
+                    Добавить через Telegram
                   </Button>
                 ),
               }}
@@ -552,11 +576,11 @@ export function SourcesPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Модалка создания/редактирования источника */}
+      {/* Модалка редактирования источника */}
       <Modal
         isOpen={isFormOpen}
         onClose={handleClose}
-        title={editingId ? "Редактировать источник" : "Новый источник"}
+        title="Редактировать источник"
       >
         <SourceForm sourceId={editingId} onSuccess={handleClose} />
       </Modal>
@@ -574,6 +598,26 @@ export function SourcesPage() {
             onSuccess={() => setLinkingSource(null)}
           />
         )}
+      </Modal>
+
+      {/* Модалка добавления через MTProto */}
+      <Modal
+        isOpen={isJoinModalOpen}
+        onClose={() => setIsJoinModalOpen(false)}
+        title="Добавить канал / группу через Telegram"
+        size="lg"
+      >
+        <JoinAndAddSourceForm onSuccess={() => setIsJoinModalOpen(false)} />
+      </Modal>
+
+      {/* Модалка импорта из Excel */}
+      <Modal
+        isOpen={isExcelModalOpen}
+        onClose={() => setIsExcelModalOpen(false)}
+        title="Импорт источников из Excel"
+        size="2xl"
+      >
+        <ExcelImportModal onClose={() => setIsExcelModalOpen(false)} />
       </Modal>
 
       {/* Подтверждение удаления */}

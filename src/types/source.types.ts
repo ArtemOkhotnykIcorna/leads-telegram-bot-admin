@@ -107,3 +107,17 @@ export interface UpdateSourceDto {
 
 // Обратная совместимость (алиас)
 export type Source = LeadSource;
+
+// DTO для подключения через MTProto (join-and-add)
+export interface MtprotoJoinAndAddDto {
+  url: string;
+  directionIds?: string[];
+  description?: string;
+  parsingTemplateKey?: string;
+}
+
+// Ответ статуса MTProto клиента
+export interface MtprotoStatusResponse {
+  connected: boolean;
+  monitoredChats: string[];
+}

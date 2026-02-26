@@ -6,6 +6,8 @@ import type {
   CreateSourceDto,
   UpdateSourceDto,
   LinkPendingSourceDto,
+  MtprotoJoinAndAddDto,
+  MtprotoStatusResponse,
 } from "@/types";
 
 export const sourcesApi = {
@@ -82,5 +84,22 @@ export const sourcesApi = {
 
   rejectPending: async (id: string): Promise<void> => {
     await api.delete(`/admin/sources/pending/${id}`);
+  },
+
+  // MTProto: статус клиента
+  getMtprotoStatus: async (): Promise<MtprotoStatusResponse> => {
+    const { data } = await api.get<MtprotoStatusResponse>(
+      "/admin/sources/mtproto/status",
+    );
+    return data;
+  },
+
+  // MTProto: войти в группу и добавить как источник
+  mtprotoJoinAndAdd: async (dto: MtprotoJoinAndAddDto): Promise<LeadSource> => {
+    const { data } = await api.post<LeadSource>(
+      "/admin/sources/mtproto/join-and-add",
+      dto,
+    );
+    return data;
   },
 };
